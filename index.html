@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenCanary Honeypot — Log360 Cloud</title>
+
+  <link rel="stylesheet" href="./predefined-components/tokens.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/layout.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/topnavbar.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/sidemenu.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/header.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/line-tab.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/widget.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/table.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/responsive.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/echarts-widget.css?v=6" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script src="./predefined-components/echarts-widget.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    .main-content { overflow-y: auto; }
+    .dash-page { --dash-gap: 4px; font-family: var(--font-family); font-size: 12px; line-height: 1.5; color: #000; }
+    .dash { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: var(--dash-gap); }
+    .dash-master { display: grid; grid-template-columns: 1fr 380px; gap: var(--dash-gap); align-items: start; }
+    .dash-main { display: flex; flex-direction: column; gap: var(--dash-gap); min-width: 0; }
+    .dash-sidebar { min-width: 0; position: sticky; top: 4px; }
+    .dash-sidebar > .card { display: flex; flex-direction: column; overflow: hidden; background: #fff; max-height: calc(100vh - 120px); }
+    .dash-sidebar .al-widget { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .dash-sidebar .al-scroll { max-height: none; flex: 1; overflow-y: auto; min-height: 0; }
+
+    /* ── Card / Widget ── */
+    .card { background: var(--widget-bg,#fff); border: 1px solid var(--widget-border,#E9E9E9); border-radius: var(--widget-radius,4px); padding: 20px 24px; position: relative; display: flex; flex-direction: column; }
+    .ch { display: flex; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
+    .ct { font-size: 14px; font-weight: 600; color: #000; }
+    .cs { font-size: 11px; color: #626262; margin-top: 2px; }
+    .card__toolbar { margin-left: auto; display: flex; gap: 2px; opacity: 0; transition: opacity .15s ease; }
+    .card:hover .card__toolbar { opacity: 1; }
+    .card__toolbar button { width: 24px; height: 24px; border: none; background: transparent; border-radius: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+    .card__toolbar button:hover { background: #f0f0f0; }
+    .card__toolbar img { width: 14px; height: 14px; }
+    .card__toolbar svg { width: 14px; height: 14px; stroke: #626262; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .card__header { display: flex; align-items: center; margin-bottom: 12px; }
+    .card__title { font-size: 14px; font-weight: 600; color: #000; }
+    .card__body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .card__chart { width: 100%; flex: 1; min-height: 280px; }
+    .w-live { display: inline-flex; align-items: center; gap: 4px; background: rgba(221,22,22,0.08); color: #DD1616; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px; letter-spacing: .3px; margin-left: auto; }
+
+    /* ── KPI Stat tiles ── */
+    .tile-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--dash-gap); }
+    .tile { background: #fff; border: 1px solid #E9E9E9; border-radius: 4px; padding: 16px 20px; cursor: pointer; transition: border-color .15s, box-shadow .15s; display: flex; align-items: center; gap: 12px; }
+    .tile:hover { border-color: #2C66DD; box-shadow: 0 0 0 2px rgba(44,102,221,.08); }
+    .tile.on { border-color: #2C66DD; background: rgba(44,102,221,0.04); }
+    .tile-info { flex: 1; min-width: 0; }
+    .tile-lbl { font-size: 11px; color: #626262; margin-bottom: 4px; }
+    .tile-val { font-size: 24px; font-weight: 600; color: #000; line-height: 1; }
+    .tile-trend { font-size: 11px; margin-top: 6px; display: inline-flex; align-items: center; gap: 2px; border-radius: 40px; padding: 2px 6px; }
+    .tile-trend.up { color: #188E4E; background: rgba(25,128,25,0.1); }
+    .tile-trend.down { color: #DD1616; background: rgba(221,22,22,0.1); }
+    .tile-ic .lc-icon--tile { width: 40px; height: 40px; stroke-width: 1.4; }
+
+    /* ── Drill-down panel ── */
+    .dp { background: rgba(44,102,221,0.03); border: 1px solid #DCDCDC; border-radius: 6px; padding: 12px 16px; margin-top: 8px; font-size: 12px; display: none; animation: dpIn .2s ease-out; }
+    .dp.on { display: block; }
+    @keyframes dpIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .dp-close { float: right; cursor: pointer; color: #626262; font-size: 14px; background: none; border: none; line-height: 1; }
+    .dp-title { font-weight: 600; color: #0D4F8C; font-size: 12px; }
+    .dp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .dp-grid div span { color: #626262; display: block; font-size: 11px; }
+    .dp-grid div strong { font-size: 12px; color: #000; }
+
+    .dp-tbl { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+    .dp-tbl th { font-weight: 600; color: #626262; padding: 4px 6px; border-bottom: 1px solid #DCDCDC; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; }
+    .dp-tbl td { padding: 5px 6px; border-bottom: 1px solid #E9E9E9; color: #000; }
+    .dp-tbl tr:hover td { background: #F0F6FF; }
+
+    /* ── Recon watchlist table ── */
+    .w-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .w-table th { font-weight: 600; color: #626262; padding: 6px 8px; border-bottom: 1px solid #DCDCDC; text-align: left; font-size: 11px; }
+    .w-table td { padding: 8px 8px; border-bottom: 1px solid #E9E9E9; color: #000; }
+    .w-table tr:hover td { background: #F0F6FF; cursor: pointer; }
+    .mono { font-family: var(--font-family); font-size: 11px; color: #2C66DD; }
+    .proto-tag { font-size: 11px; background: #F5F5F5; padding: 1px 6px; border-radius: 3px; color: #000; white-space: nowrap; }
+
+    /* ── Risk bar ── */
+    .risk-bar { width: 60px; height: 6px; border-radius: 3px; background: #F5F5F5; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    .risk-fill { height: 100%; border-radius: 3px; }
+
+    /* ── Severity badges ── */
+    .sev-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+    .sev-crit { background: #FDE8E8; color: #DD1616; }
+    .sev-high { background: #FEF3E2; color: #D14900; }
+    .sev-med  { background: #E8F0FE; color: #2C66DD; }
+    .sev-ok   { background: #E8F5E8; color: #198019; }
+    .sev-badge img { width: 12px; height: 12px; }
+
+    /* ── Alert feed (uses echarts-widget.css .al-* classes) ── */
+
+    /* ── External IP risk rows ── */
+    .ext-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #E9E9E9; cursor: pointer; transition: background .15s; }
+    .ext-row:hover { background: #F0F6FF; }
+    .ext-row:last-child { border-bottom: none; }
+    .ext-ip { font-size: 11px; color: #2C66DD; width: 110px; flex-shrink: 0; }
+    .ext-score { font-size: 12px; font-weight: 700; min-width: 28px; color: #000; }
+    .ext-vt { font-size: 11px; font-weight: 600; color: #000; }
+    .ext-geo { font-size: 11px; color: #626262; width: 24px; text-align: right; flex-shrink: 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1200px) {
+      .dash-master { grid-template-columns: 1fr; }
+      .dash-sidebar { position: static; }
+      .dash-sidebar .card { max-height: 400px; }
+    }
+    @media (max-width: 1024px) {
+      .tile-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .tile-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="sidemenu-backdrop"></div>
+
+<div class="app-shell">
+
+  <!-- ═══ TOPNAVBAR ═══ -->
+  <header class="topnavbar" data-active-tab="Dashboard">
+    <div class="topnavbar__row1">
+      <div class="topnavbar__row1-container">
+        <button class="topnavbar__hamburger" title="Menu" aria-label="Toggle navigation">
+          <img src="./assets/icons/icon-menu.svg" alt="" style="width:20px;height:20px;" />
+        </button>
+        <a href="#" class="topnavbar__logo">
+          <img class="topnavbar__logo-icon" src="./assets/icons/logo-log360.svg" alt="Log360" />
+          <span class="topnavbar__logo-text">Log360 Cloud</span>
+        </a>
+        <div class="topnavbar__right">
+          <span class="topnavbar__subscription">Subscription</span>
+          <div class="topnavbar__divider"></div>
+          <div class="topnavbar__icons">
+            <button class="topnavbar__icon-btn" title="Notifications"><img src="./assets/icons/icon-notification.svg" alt="" /><span class="topnavbar__badge topnavbar__badge--blue">8</span></button>
+            <button class="topnavbar__icon-btn" title="Alerts"><img src="./assets/icons/icon-notification.svg" alt="" /><span class="topnavbar__badge topnavbar__badge--red">3</span></button>
+            <button class="topnavbar__icon-btn" title="Help"><img src="./assets/icons/icon-question.svg" alt="" /></button>
+          </div>
+          <button class="topnavbar__avatar" title="Account"><img src="./assets/icons/icon-user-avatar.svg" alt="User" /></button>
+          <button class="topnavbar__grid" title="Apps"><img src="./assets/icons/icon-apps-grid.svg" alt="" /></button>
+        </div>
+      </div>
+    </div>
+    <div class="topnavbar__row2">
+      <div class="topnavbar__row2-container">
+        <nav class="topnavbar__tabs">
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Dashboard</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Reports</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Compliance</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Search</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Thread Hub</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Cloud Protection</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Settings</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Support</a>
+        </nav>
+        <button class="topnavbar__more" title="More tabs" aria-label="Show all tabs">
+          <img src="./assets/icons/icon-ab-more.svg" alt="" style="width:18px;height:18px;filter:brightness(10);" />
+        </button>
+        <div class="topnavbar__segment">
+          <div class="topnavbar__search">
+            <img src="./assets/icons/icon-search.svg" alt="" style="width:14px;height:14px;" />
+            <input type="text" placeholder="Log Search" />
+          </div>
+          <button class="topnavbar__add-btn"><img src="./assets/icons/icon-plus.svg" alt="" style="width:10px;height:10px;" /><span>Add</span></button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ APP BODY — NO SIDEMENU (dashboard layout) ═══ -->
+  <div class="app-body">
+    <main class="main-content dash-page" style="padding:0;">
+
+      <!-- ═══ LINE TAB — Variant 4 Dashboard ═══ -->
+      <div class="line-tab" style="padding-left:16px;">
+        <div class="line-tab__headers">
+          <button class="line-tab__header line-tab__header--unselected" data-tab="d-events">Events Overview</button>
+          <button class="line-tab__header line-tab__header--selected" data-tab="d-canary">OpenCanary Honeypot</button>
+          <button class="line-tab__header line-tab__header--unselected" data-tab="d-network">Network Overview</button>
+          <button class="line-tab__header line-tab__header--unselected" data-tab="d-threat">Threat Analytics</button>
+          <button class="line-tab__header line-tab__header--unselected" data-tab="d-incident">Incident Overview</button>
+        </div>
+        <div class="line-tab__actions">
+          <div class="cal-input" title="Date Range">
+            <span class="cal-input__text">2026-04-04 – 2026-04-05</span>
+            <span class="cal-input__icon"><img src="./assets/icons/icon-calendar-input.svg" alt="" /></span>
+          </div>
+          <button class="line-tab__action-icon-btn" title="Refresh"><i data-lucide="refresh-cw" style="width:14px;height:14px;"></i></button>
+          <button class="line-tab__action-icon-btn" title="Expand"><i data-lucide="maximize-2" style="width:14px;height:14px;"></i></button>
+          <div class="line-tab__action-separator"></div>
+          <div class="gear-wrapper" style="position:relative;">
+            <button class="line-tab__action-settings" title="Settings"><i data-lucide="settings" style="width:14px;height:14px;"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="line-tab__body">
+        <div class="line-tab__content" data-tab-content="d-events"><div style="padding:40px;text-align:center;color:#626262;">Events Overview dashboard content</div></div>
+
+        <!-- ═══ OPENCANARY HONEYPOT TAB ═══ -->
+        <div class="line-tab__content line-tab__content--active" data-tab-content="d-canary">
+          <div class="dash">
+
+            <!-- ── Row 0: Database & Datastore KPI Tiles (full width) ── -->
+            <div class="card" style="padding:16px 20px;">
+              <div class="ch">
+                <div><div class="ct">Database & Datastore Access Attempts</div></div>
+                <span class="w-live"><i data-lucide="radio" style="width:12px;height:12px;"></i> LIVE</span>
+              </div>
+              <div class="tile-row" id="dbTiles"></div>
+              <div class="dp" id="db-dp">
+                <button class="dp-close" onclick="closeDP('db-dp')">&times;</button>
+                <div class="dp-title" id="db-dp-t"></div>
+                <table class="dp-tbl">
+                  <thead><tr><th>Time</th><th>Source IP</th><th>Username</th><th>Password</th><th>AD Match</th></tr></thead>
+                  <tbody id="db-dp-rows"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ── Master Grid: Main (70%) + Alert Feed Sidebar (30%) ── -->
+            <div class="dash-master">
+
+              <!-- ══ LEFT: Main content column ══ -->
+              <div class="dash-main">
+
+                <!-- Row 1: Remote Access Analytics -->
+                <div class="card">
+                  <div class="ch">
+                    <div><div class="ct">Remote Access Analytics</div></div>
+                    <div class="card__toolbar"><button data-tooltip="Maximize"><i data-lucide="maximize-2"></i></button><button data-tooltip="Refresh"><i data-lucide="refresh-cw"></i></button><button data-tooltip="More"><i data-lucide="more-horizontal"></i></button></div>
+                  </div>
+                  <div id="chRemoteAccess" style="width:100%;height:220px;flex:1;"></div>
+                </div>
+
+                <!-- Row 2: Attack Path (55%) + Heatmap (45%) -->
+                <div style="display:grid;grid-template-columns:55% 45%;gap:var(--dash-gap);">
+                  <div class="card">
+                    <div class="ch">
+                      <div><div class="ct">Attack Path Flow</div></div>
+                      <div class="card__toolbar"><button data-tooltip="Maximize"><i data-lucide="maximize-2"></i></button><button data-tooltip="Refresh"><i data-lucide="refresh-cw"></i></button><button data-tooltip="More"><i data-lucide="more-horizontal"></i></button></div>
+                    </div>
+                    <div id="chSankey" style="width:100%;height:300px;flex:1;"></div>
+                  </div>
+                  <div class="card">
+                    <div class="card__header">
+                      <span class="card__title">Nodes vs Services Configured</span>
+                      <div class="card__toolbar"><button data-tooltip="Maximize"><i data-lucide="maximize-2"></i></button><button data-tooltip="Refresh"><i data-lucide="refresh-cw"></i></button><button data-tooltip="More"><i data-lucide="more-horizontal"></i></button></div>
+                    </div>
+                    <div class="card__body"><div class="card__chart" id="chHeatmap" style="min-height:300px;"></div></div>
+                  </div>
+                </div>
+
+                <!-- Row 3: Internal IPs (60%) + External IPs (40%) -->
+                <div style="display:grid;grid-template-columns:60% 40%;gap:var(--dash-gap);">
+                  <div class="card">
+                    <div class="card__header">
+                      <span class="card__title">Top Internal Attacker IPs</span>
+                      <div class="card__toolbar"><button data-tooltip="Maximize"><i data-lucide="maximize-2"></i></button><button data-tooltip="Refresh"><i data-lucide="refresh-cw"></i></button><button data-tooltip="More"><i data-lucide="more-horizontal"></i></button></div>
+                    </div>
+                    <div class="card__body">
+                      <div class="card__chart" id="chInternalIPs" style="min-height:200px;"></div>
+                    </div>
+                    <div class="dp" id="ip-dp">
+                      <button class="dp-close" onclick="closeDP('ip-dp')">&times;</button>
+                      <div class="dp-title" id="ip-dp-t"></div>
+                      <div class="dp-grid" id="ip-dp-b"></div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <div class="ch">
+                      <div><div class="ct">Top External IPs by Risk</div></div>
+                      <div class="card__toolbar"><button data-tooltip="Maximize"><i data-lucide="maximize-2"></i></button><button data-tooltip="Refresh"><i data-lucide="refresh-cw"></i></button><button data-tooltip="More"><i data-lucide="more-horizontal"></i></button></div>
+                    </div>
+                    <div id="extIpList"></div>
+                    <div class="dp" id="ext-dp">
+                      <button class="dp-close" onclick="closeDP('ext-dp')">&times;</button>
+                      <div class="dp-title" id="ext-dp-t"></div>
+                      <div class="dp-grid" id="ext-dp-b"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Row 4: URL Paths (50%) + Recon Watchlist (50%) -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--dash-gap);">
+                  <div class="card">
+                    <div class="card__header">
+                      <span class="card__title">Top Targeted URL Paths</span>
+                      <div class="card__toolbar"><button data-tooltip="Maximize"><i data-lucide="maximize-2"></i></button><button data-tooltip="Refresh"><i data-lucide="refresh-cw"></i></button><button data-tooltip="More"><i data-lucide="more-horizontal"></i></button></div>
+                    </div>
+                    <div class="card__body"><div class="card__chart" id="chURLPaths" style="min-height:280px;"></div></div>
+                  </div>
+                  <div class="card">
+                    <div class="ch">
+                      <div><div class="ct">Reconnaissance Watchlist</div></div>
+                      <div class="card__toolbar"><button data-tooltip="Maximize"><i data-lucide="maximize-2"></i></button><button data-tooltip="Refresh"><i data-lucide="refresh-cw"></i></button><button data-tooltip="More"><i data-lucide="more-horizontal"></i></button></div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                      <table class="w-table">
+                        <thead><tr><th>Source IP</th><th>First Seen</th><th>Last Active</th><th>Protocols</th><th>Escalated</th><th style="text-align:right;">ATA / VT</th></tr></thead>
+                        <tbody id="wl-rows"></tbody>
+                      </table>
+                    </div>
+                    <div class="dp" id="wl-dp">
+                      <button class="dp-close" onclick="closeDP('wl-dp')">&times;</button>
+                      <div class="dp-title" id="wl-dp-t"></div>
+                      <div class="dp-grid" id="wl-dp-b"></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /dash-main -->
+
+              <!-- ══ RIGHT: Alerts Feed sidebar ══ -->
+              <div class="dash-sidebar">
+                <div class="card">
+                  <div class="ch">
+                    <div><div class="ct">OpenCanary Alerts Feed</div></div>
+                    <span class="w-live"><i data-lucide="radio" style="width:12px;height:12px;"></i> LIVE</span>
+                  </div>
+                  <div class="al-widget" id="oc-alert-list"></div>
+                </div>
+              </div><!-- /dash-sidebar -->
+
+            </div><!-- /dash-master -->
+
+          </div><!-- /dash -->
+        </div><!-- /d-canary -->
+
+        <div class="line-tab__content" data-tab-content="d-network"><div style="padding:40px;text-align:center;color:#626262;">Network Overview dashboard content</div></div>
+        <div class="line-tab__content" data-tab-content="d-threat"><div style="padding:40px;text-align:center;color:#626262;">Threat Analytics dashboard content</div></div>
+        <div class="line-tab__content" data-tab-content="d-incident"><div style="padding:40px;text-align:center;color:#626262;">Incident Overview dashboard content</div></div>
+      </div><!-- /line-tab__body -->
+
+    </main>
+  </div>
+</div>
+
+<!-- Bottom sheet -->
+<div class="nav-bottom-sheet" id="navBottomSheet">
+  <div class="nav-bottom-sheet__backdrop"></div>
+  <div class="nav-bottom-sheet__panel">
+    <div class="nav-bottom-sheet__handle"></div>
+    <ul class="nav-bottom-sheet__list">
+      <li><button class="nav-bottom-sheet__item" data-tab="Dashboard">Dashboard</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Reports">Reports</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Compliance">Compliance</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Search">Search</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Correlation">Correlation</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Alert">Alert</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Cloud Protection">Cloud Protection</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Settings">Settings</button></li>
+      <li><button class="nav-bottom-sheet__item" data-tab="Support">Support</button></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══ DATA + LOGIC ═══ -->
+<script>
+/* ── Database & Datastore KPI Tiles ── */
+var DB_TILES = [
+  { key:'mysql', label:'MySQL · 8001',          val:47, trend:'12 today', icon:'database',   color:'#2C66DD' },
+  { key:'msql',  label:'MSSQL SQL Auth · 9001', val:23, trend:'5 today',  icon:'server',     color:'#D14900' },
+  { key:'mwin',  label:'MSSQL Win Auth · 9002', val:8,  trend:'8 NEW',   icon:'monitor',    color:'#DD1616', down:true },
+  { key:'redis', label:'Redis · 17001',          val:31, trend:'9 today', icon:'hard-drive', color:'#9B59B6' },
+  { key:'mongo', label:'MongoDB · 20001',        val:19, trend:'4 today', icon:'layers',     color:'#27AE60' }
+];
+var dbDD = {
+  mysql:[{t:'21:34',ip:'10.0.8.111',u:'root',p:'root123',ad:'NO'},{t:'18:45',ip:'10.0.3.47',u:'jsmith',p:'Summer2024!',ad:'YES'}],
+  msql:[{t:'20:18',ip:'192.168.1.99',u:'sa',p:'sa123',ad:'NO'}],
+  mwin:[{t:'20:18',ip:'172.16.5.22',u:'CORP\\sa_backup',p:'[NTLM hash]',ad:'YES'},{t:'19:01',ip:'10.0.3.47',u:'CORP\\jsmith',p:'Summer2024!',ad:'YES'}],
+  redis:[{t:'21:12',ip:'10.0.5.88',u:'—',p:'CONFIG SET dir /tmp',ad:'NO'}],
+  mongo:[{t:'18:22',ip:'10.0.8.111',u:'admin',p:'admin',ad:'NO'}]
+};
+var dbLbl={mysql:'MySQL (8001)',msql:'MSSQL SQL Auth (9001)',mwin:'MSSQL Windows Auth (9002)',redis:'Redis (17001)',mongo:'MongoDB (20001)'};
+
+function buildDBTiles(){
+  var w=document.getElementById('dbTiles'); w.innerHTML='';
+  DB_TILES.forEach(function(t){
+    var cls=t.down?'tile-trend down':'tile-trend up';
+    var arrow=t.down?'<img src="./assets/icons/icon-tile-trend-down.svg" alt="" style="width:12px;height:12px;"/>':'<img src="./assets/icons/icon-tile-trend-up.svg" alt="" style="width:12px;height:12px;"/>';
+    w.innerHTML+='<div class="tile" onclick="dbDrill(\''+t.key+'\',this)"><div class="tile-info"><div class="tile-lbl">'+t.label+'</div><div class="tile-val">'+t.val+'</div><div class="'+cls+'">'+arrow+' '+t.trend+'</div></div><div class="tile-ic"><i data-lucide="'+t.icon+'" class="lc-icon--tile" style="color:'+t.color+';"></i></div></div>';
+  });
+  lucide.createIcons();
+}
+function dbDrill(key,el){
+  document.querySelectorAll('.tile').forEach(function(t){t.classList.remove('on');});
+  el.classList.add('on');
+  var rows=(dbDD[key]||[]).map(function(r){return '<tr><td>'+r.t+'</td><td class="mono">'+r.ip+'</td><td>'+r.u+'</td><td style="font-size:11px;">'+r.p+'</td><td><span class="sev-badge '+(r.ad==='YES'?'sev-crit':'sev-med')+'">'+r.ad+'</span></td></tr>';}).join('');
+  document.getElementById('db-dp-t').textContent=dbLbl[key];
+  document.getElementById('db-dp-rows').innerHTML=rows;
+  document.getElementById('db-dp').classList.add('on');
+}
+
+/* ── Internal IPs ── */
+var ips=[
+  {ip:'10.0.3.47',n:34,id:'jsmith (IT)',dept:'IT',events:'SSH×14, SMB×11, RDP×9'},
+  {ip:'172.16.5.22',n:28,id:'Unresolved',dept:null,events:'MSSQL×18, MySQL×10'},
+  {ip:'10.0.8.111',n:21,id:'dbadmin (DBA)',dept:'DBA',events:'MySQL×13, Redis×8'},
+  {ip:'192.168.1.99',n:17,id:'temp_user (HR)',dept:'HR',events:'SSH×9, FTP×8'},
+  {ip:'10.0.2.200',n:11,id:'Unresolved',dept:null,events:'MongoDB×7, MySQL×4'}
+];
+function ipDrill(i){
+  var d=ips[i];
+  document.getElementById('ip-dp-t').textContent=d.ip;
+  document.getElementById('ip-dp-b').innerHTML='<div><span>Resolved identity</span><strong>'+d.id+'</strong></div><div><span>Department</span><strong>'+(d.dept||'Unknown')+'</strong></div><div><span>Event breakdown</span><strong style="font-size:11px">'+d.events+'</strong></div><div><span>Total events (24h)</span><strong>'+d.n+'</strong></div>';
+  document.getElementById('ip-dp').classList.add('on');
+}
+
+/* ── External IPs ── */
+var extIPs=[
+  {ip:'203.45.12.7',risk:95,geo:'CN',cat:'Brute Force',vt:'MALICIOUS',svcs:'SSH, MySQL',firstSeen:'Apr 02',lastSeen:'Apr 05 14:33'},
+  {ip:'185.220.101.3',risk:88,geo:'DE',cat:'Tor Exit Node',vt:'MALICIOUS',svcs:'NTP, SNMP',firstSeen:'Apr 03',lastSeen:'Apr 05 08:12'},
+  {ip:'91.108.4.200',risk:82,geo:'RU',cat:'Scanner',vt:'MALICIOUS',svcs:'TFTP, SNMP, SSH',firstSeen:'Apr 04',lastSeen:'Apr 05 20:15'},
+  {ip:'45.33.32.156',risk:61,geo:'US',cat:'Recon',vt:'SUSPICIOUS',svcs:'HTTP, FTP',firstSeen:'Apr 05',lastSeen:'Apr 05 19:02'},
+  {ip:'103.224.80.14',risk:47,geo:'IN',cat:'Credential Stuff',vt:'SUSPICIOUS',svcs:'MSSQL',firstSeen:'Apr 05',lastSeen:'Apr 05 16:41'},
+  {ip:'198.51.100.22',risk:29,geo:'US',cat:'Port Scan',vt:'CLEAN',svcs:'Telnet',firstSeen:'Apr 05',lastSeen:'Apr 05 11:55'}
+];
+var vtColor={MALICIOUS:'#000',SUSPICIOUS:'#000',CLEAN:'#000'};
+
+function buildExtIPs(){
+  var el=document.getElementById('extIpList'); el.innerHTML='';
+  extIPs.forEach(function(d,i){
+    var riskClr=d.risk>=80?'#DD1616':d.risk>=50?'#D14900':'#198019';
+    el.innerHTML+='<div class="ext-row" onclick="extDrill('+i+')"><div class="ext-ip">'+d.ip+'</div><div style="flex:1;display:flex;align-items:center;gap:8px;"><div class="risk-bar"><div class="risk-fill" style="width:'+d.risk+'%;background:'+riskClr+';"></div></div><strong class="ext-score">'+d.risk+'</strong><span class="ext-vt">'+d.vt+'</span></div><div class="ext-geo">'+d.geo+'</div></div>';
+  });
+}
+function extDrill(i){
+  var d=extIPs[i];
+  document.getElementById('ext-dp-t').textContent='Source: '+d.ip;
+  document.getElementById('ext-dp-b').innerHTML='<div><span>Category</span><strong>'+d.cat+'</strong></div><div><span>Risk score</span><strong>'+d.risk+'/100</strong></div><div><span>VirusTotal</span><strong>'+d.vt+'</strong></div><div><span>Geo</span><strong>'+d.geo+'</strong></div><div><span>Services targeted</span><strong>'+d.svcs+'</strong></div><div><span>First seen</span><strong>'+d.firstSeen+'</strong></div><div><span>Last seen</span><strong>'+d.lastSeen+'</strong></div>';
+  document.getElementById('ext-dp').classList.add('on');
+}
+
+/* ── Recon Watchlist ── */
+var wlData=[
+  {ip:'203.45.12.7',f:'Apr 04 09:12',l:'Apr 05 14:33',p:'SNMP, NTP',esc:'YES',sc:72,vt:'MALICIOUS'},
+  {ip:'10.0.5.88',f:'Apr 05 11:20',l:'Apr 05 18:41',p:'TFTP, SIP',esc:'YES',sc:58,vt:'SUSPICIOUS'},
+  {ip:'185.220.101.3',f:'Apr 03 22:05',l:'Apr 05 08:12',p:'NTP',esc:'NO',sc:81,vt:'MALICIOUS'},
+  {ip:'10.0.2.15',f:'Apr 05 15:44',l:'Apr 05 17:02',p:'SNMP',esc:'NO',sc:23,vt:'CLEAN'},
+  {ip:'91.108.4.200',f:'Apr 04 16:30',l:'Apr 05 20:15',p:'TFTP, SNMP',esc:'YES',sc:95,vt:'MALICIOUS'}
+];
+function buildWL(){
+  var tb=document.getElementById('wl-rows'); tb.innerHTML='';
+  wlData.forEach(function(d,i){
+    tb.innerHTML+='<tr onclick="wlDrill('+i+')"><td class="mono">'+d.ip+'</td><td>'+d.f+'</td><td>'+d.l+'</td><td><span class="proto-tag">'+d.p+'</span></td><td><span class="sev-badge '+(d.esc==='YES'?'sev-crit':'sev-med')+'"><img src="./assets/icons/'+(d.esc==='YES'?'icon-tile-sev-critical.svg':'icon-tile-sev-attention.svg')+'" alt="" style="width:12px;height:12px;"/>'+d.esc+'</span></td><td style="text-align:right;"><strong>'+d.sc+'</strong> <span class="ext-vt">'+d.vt+'</span></td></tr>';
+  });
+}
+function wlDrill(i){
+  var d=wlData[i];
+  document.getElementById('wl-dp-t').textContent='Source: '+d.ip;
+  document.getElementById('wl-dp-b').innerHTML='<div><span>Protocols seen</span><strong>'+d.p+'</strong></div><div><span>VirusTotal result</span><strong>'+d.vt+'</strong></div><div><span>ATA Threat Score</span><strong>'+d.sc+'/100</strong></div><div><span>Escalated to auth</span><strong>'+d.esc+'</strong></div>';
+  document.getElementById('wl-dp').classList.add('on');
+}
+
+/* ── Alert Feed (ElegantEChart.alertList) ── */
+function initAlertFeed(){
+  ElegantEChart.alertList('oc-alert-list', {
+    alerts: [
+      { title: 'SSH HONEYCRED — 10.0.3.47', severity: 'Critical', score: 92,
+        description: 'Credential jsmith planted on dev-laptop-03 triggered by lateral movement from internal RFC-1918 host',
+        time: '2026-04-05 21:34:11',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'SSH', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'MSSQL HONEYCRED — 172.16.5.22', severity: 'Critical', score: 88,
+        description: 'Credential CORP\\sa_backup planted on db-server-02 accessed via SQL authentication from internal subnet',
+        time: '2026-04-05 20:18:44',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'MSSQL', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'HTTP Credential Harvest — 10.0.8.111', severity: 'High', score: 78,
+        description: 'Admin credentials planted on web-app-01 triggered by HTTP POST login attempt from internal host',
+        time: '2026-04-05 19:55:03',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'HTTP', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'FTP Brute-Force — 192.168.1.99', severity: 'High', score: 74,
+        description: 'Credential ftpuser planted on file-srv-01 detected repeated FTP authentication attempts',
+        time: '2026-04-05 18:22:31',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'FTP', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'MSSQL SA Access — 10.0.2.200', severity: 'High', score: 70,
+        description: 'SA credential planted on app-server-04 triggered by direct SQL authentication from app tier',
+        time: '2026-04-05 16:47:58',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'MSSQL', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'RDP Session — 10.0.3.47', severity: 'Medium', score: 60,
+        description: 'User jsmith attempted RDP connection to honeypot ws-rdp-01 from previously flagged source IP',
+        time: '2026-04-05 14:08:15',
+        tags: [{ label: 'RDP', bg: '#FFDECC', color: '#FF5900' }] },
+      { title: 'HTTP Scanner — 203.45.12.7', severity: 'Medium', score: 55,
+        description: 'External scanner probing dmz-http-02 honeypot with automated crawl patterns and directory enumeration',
+        time: '2026-04-05 13:44:02',
+        tags: [{ label: 'HTTP', bg: '#FFDECC', color: '#FF5900' }, { label: 'External', bg: '#FCE8E8', color: '#DD1616' }] },
+      { title: 'VNC Unauthorized — 10.0.8.111', severity: 'Medium', score: 48,
+        description: 'VNC authentication attempt on dev-vnc-01 honeypot from internal host with repeated password guesses',
+        time: '2026-04-05 12:31:18',
+        tags: [{ label: 'VNC', bg: '#FFDECC', color: '#FF5900' }] },
+      { title: 'MySQL Root Login — 172.16.5.22', severity: 'Low', score: 35,
+        description: 'Root credential used on db-hny-03 MySQL honeypot from database subnet — likely automated script',
+        time: '2026-04-05 11:19:05',
+        tags: [{ label: 'MySQL', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'SSH Root Scan — 91.108.4.200', severity: 'Medium', score: 52,
+        description: 'External IP attempted root SSH login on dmz-ssh-01 honeypot with dictionary-based password spray',
+        time: '2026-04-05 09:22:37',
+        tags: [{ label: 'SSH', bg: '#FFDECC', color: '#FF5900' }, { label: 'External', bg: '#FCE8E8', color: '#DD1616' }] },
+      { title: 'Redis Unauthenticated — 10.0.5.88', severity: 'High', score: 72,
+        description: 'Unauthenticated Redis command execution on cache-hny-01 honeypot from CI server subnet',
+        time: '2026-04-05 08:11:50',
+        tags: [{ label: 'Redis', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'Telnet Admin — 192.168.1.99', severity: 'Medium', score: 44,
+        description: 'Admin credential used on ot-term-01 Telnet honeypot from OT network segment — possible lateral pivot',
+        time: '2026-04-05 07:45:22',
+        tags: [{ label: 'Telnet', bg: '#FFDECC', color: '#FF5900' }] },
+      { title: 'SSH Deploy Key — 10.0.5.88', severity: 'Critical', score: 85,
+        description: 'Deploy service account triggered on ci-srv-01 honeypot — credential was planted as CI/CD trap',
+        time: '2026-04-05 06:30:15',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'SSH', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'MongoDB Scan — 10.0.2.200', severity: 'Low', score: 30,
+        description: 'Automated MongoDB port scan detected on db-hny-03 from application tier — no authentication attempted',
+        time: '2026-04-05 05:18:44',
+        tags: [{ label: 'MongoDB', bg: '#F7F0E6', color: '#FABB34' }] },
+      { title: 'HTTP Directory Traversal — 203.45.12.7', severity: 'High', score: 76,
+        description: 'Path traversal attack ../../etc/passwd on dmz-http-02 honeypot from known scanner IP',
+        time: '2026-04-05 04:55:33',
+        tags: [{ label: 'HTTP', bg: '#E8F0FE', color: '#2C66DD' }, { label: 'External', bg: '#FCE8E8', color: '#DD1616' }] },
+      { title: 'MSSQL xp_cmdshell — 172.16.5.22', severity: 'Critical', score: 94,
+        description: 'Attempted xp_cmdshell execution on db-server-02 honeypot via SA credential from database subnet',
+        time: '2026-04-05 03:42:18',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'MSSQL', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'FTP Anonymous — 91.108.4.200', severity: 'Low', score: 25,
+        description: 'Anonymous FTP login attempt on file-srv-01 honeypot from external IP — directory listing enumeration',
+        time: '2026-04-05 02:31:07',
+        tags: [{ label: 'FTP', bg: '#F7F0E6', color: '#FABB34' }, { label: 'External', bg: '#FCE8E8', color: '#DD1616' }] },
+      { title: 'RDP Brute-Force — 10.0.8.111', severity: 'High', score: 68,
+        description: 'Multiple failed RDP authentications on ws-rdp-01 honeypot with credential stuffing pattern detected',
+        time: '2026-04-05 01:18:55',
+        tags: [{ label: 'RDP', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'SSH Dictionary Attack — 185.220.101.33', severity: 'Medium', score: 58,
+        description: 'External Tor exit node performing SSH dictionary attack against dmz-ssh-01 honeypot — 847 attempts in 5 min',
+        time: '2026-04-05 00:45:12',
+        tags: [{ label: 'SSH', bg: '#FFDECC', color: '#FF5900' }, { label: 'External', bg: '#FCE8E8', color: '#DD1616' }, { label: 'Tor', bg: '#F3E8FF', color: '#9B59B6' }] },
+      { title: 'MySQL Dump — 10.0.3.47', severity: 'Critical', score: 90,
+        description: 'mysqldump command executed on db-hny-03 honeypot using planted root credential — data exfiltration attempt',
+        time: '2026-04-04 23:58:41',
+        tags: [{ label: 'HONEYCRED', bg: 'rgba(221,22,22,0.08)', color: '#DD1616' }, { label: 'MySQL', bg: '#E8F0FE', color: '#2C66DD' }] },
+      { title: 'VNC Screen Capture — 10.0.8.111', severity: 'Medium', score: 50,
+        description: 'VNC session established on dev-vnc-01 with screen capture activity detected from internal workstation',
+        time: '2026-04-04 22:34:09',
+        tags: [{ label: 'VNC', bg: '#FFDECC', color: '#FF5900' }] },
+      { title: 'HTTP SQL Injection — 198.51.100.22', severity: 'High', score: 75,
+        description: 'SQL injection payload in HTTP POST body targeting dmz-http-02 honeypot login form from US-based IP',
+        time: '2026-04-04 21:12:33',
+        tags: [{ label: 'HTTP', bg: '#E8F0FE', color: '#2C66DD' }, { label: 'External', bg: '#FCE8E8', color: '#DD1616' }] }
+    ]
+  });
+}
+
+/* ── Helpers ── */
+function closeDP(id){document.getElementById(id).classList.remove('on');document.querySelectorAll('.tile').forEach(function(t){t.classList.remove('on');});}
+
+/* ═══ INIT CHARTS ═══ */
+function initCharts(){
+  ElegantEChart.stackedArea('chRemoteAccess',{
+    labels:['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'],
+    datasets:[
+      {label:'SSH',values:[2,1,0,3,5,8,4,10,15,11,8,5],color:'#2C66DD'},
+      {label:'RDP',values:[0,0,0,1,2,4,2,5,8,6,4,2],color:'#FABB34'},
+      {label:'VNC',values:[0,0,0,0,1,2,1,3,5,4,2,1],color:'#DD1616'},
+      {label:'Telnet',values:[1,0,0,1,3,5,2,6,9,7,5,3],color:'#9B59B6'}
+    ]
+  });
+
+  ElegantEChart.sankey('chSankey',{
+    nodes:[
+      {name:'10.0.3.47'},{name:'172.16.5.22'},{name:'10.0.8.111'},{name:'192.168.1.99'},{name:'10.0.2.200'},{name:'10.0.5.88'},{name:'203.45.12.7'},{name:'91.108.4.200'},
+      {name:'dev-laptop-03'},{name:'ws-rdp-01'},{name:'db-server-02'},{name:'file-srv-01'},{name:'db-hny-03'},{name:'web-app-01'},{name:'cache-hny-01'},{name:'app-server-04'},{name:'ci-srv-01'},{name:'dmz-http-02'},{name:'dmz-ssh-01'},{name:'ot-term-01'},
+      {name:'SSH'},{name:'RDP'},{name:'MSSQL'},{name:'FTP'},{name:'MySQL'},{name:'HTTP'},{name:'Redis'},{name:'Telnet'},{name:'MongoDB'},{name:'VNC'}
+    ],
+    links:[
+      {source:'10.0.3.47',target:'dev-laptop-03',value:14},{source:'10.0.3.47',target:'ws-rdp-01',value:9},{source:'10.0.3.47',target:'db-server-02',value:7},{source:'10.0.3.47',target:'file-srv-01',value:4},
+      {source:'172.16.5.22',target:'db-server-02',value:18},{source:'172.16.5.22',target:'db-hny-03',value:10},
+      {source:'10.0.8.111',target:'web-app-01',value:8},{source:'10.0.8.111',target:'db-hny-03',value:13},{source:'10.0.8.111',target:'cache-hny-01',value:5},
+      {source:'192.168.1.99',target:'file-srv-01',value:8},{source:'192.168.1.99',target:'ot-term-01',value:5},{source:'192.168.1.99',target:'dmz-ssh-01',value:4},
+      {source:'10.0.2.200',target:'app-server-04',value:4},{source:'10.0.2.200',target:'db-hny-03',value:4},{source:'10.0.2.200',target:'cache-hny-01',value:3},
+      {source:'10.0.5.88',target:'ci-srv-01',value:6},{source:'10.0.5.88',target:'cache-hny-01',value:4},
+      {source:'203.45.12.7',target:'dmz-http-02',value:7},{source:'203.45.12.7',target:'dmz-ssh-01',value:5},
+      {source:'91.108.4.200',target:'dmz-ssh-01',value:6},{source:'91.108.4.200',target:'dmz-http-02',value:3},
+      {source:'dev-laptop-03',target:'SSH',value:14},{source:'ws-rdp-01',target:'RDP',value:9},
+      {source:'db-server-02',target:'MSSQL',value:25},{source:'file-srv-01',target:'FTP',value:12},
+      {source:'db-hny-03',target:'MySQL',value:27},{source:'web-app-01',target:'HTTP',value:8},
+      {source:'cache-hny-01',target:'Redis',value:12},{source:'app-server-04',target:'MSSQL',value:4},
+      {source:'ci-srv-01',target:'SSH',value:6},{source:'dmz-http-02',target:'HTTP',value:10},
+      {source:'dmz-ssh-01',target:'SSH',value:15},{source:'ot-term-01',target:'Telnet',value:5}
+    ]
+  });
+
+  var hNodes=['HNY-01','HNY-02','HNY-03','HNY-04','HNY-05','HNY-06','HNY-07','HNY-08','HNY-09','HNY-10','HNY-11','HNY-12'];
+  var hSvcs=['SSH','HTTP','FTP','MySQL','Redis','MSSQL','RDP','Telnet','VNC','MongoDB','NTP','SNMP'];
+  var hData=[
+    [0,0,42],[0,1,28],[0,2,15],[0,3,19],[0,4,8],
+    [1,0,34],[1,5,22],[1,6,18],[1,7,12],
+    [2,3,26],[2,5,14],[2,9,9],[2,4,6],
+    [3,0,31],[3,1,45],
+    [4,0,55],[4,1,37],[4,2,21],[4,3,16],[4,7,11],[4,8,7],
+    [5,0,12],
+    [6,0,38],[6,1,24],[6,2,17],[6,10,5],[6,11,3],
+    [7,3,20],[7,4,13],[7,9,8],
+    [8,0,29],[8,6,15],
+    [9,0,48],[9,1,33],[9,2,22],[9,5,18],[9,6,14],[9,8,9],
+    [10,0,25],[10,1,16],[10,3,10],
+    [11,10,7],[11,11,4]
+  ];
+  ElegantEChart.heatmap('chHeatmap',{xLabels:hSvcs,yLabels:hNodes,values:hData});
+
+  ElegantEChart.pictorialBar('chInternalIPs',{
+    labels:ips.map(function(d){return d.ip;}),
+    datasets:[{label:'Events',values:ips.map(function(d){return d.n;}),color:'#2C66DD',symbol:'roundRect'}]
+  },{ symbolSize:['40%',14], repeat:true });
+  var ipCh=echarts.getInstanceByDom(document.getElementById('chInternalIPs'));
+  if(ipCh) ipCh.on('click',function(p){if(typeof p.dataIndex==='number') ipDrill(p.dataIndex);});
+
+  ElegantEChart.nightingaleRose('chURLPaths',{
+    labels:['/wp-admin','/admin','/phpmyadmin','/login','/manager','/console','/api/v1'],
+    values:[89,67,45,38,29,22,15],
+    colors:['#DD1616','#D14900','#FF5900','#FABB34','#2C66DD','#009CBB','#198019']
+  });
+}
+
+/* ═══ INIT ═══ */
+buildDBTiles();
+buildExtIPs();
+buildWL();
+initAlertFeed();
+setTimeout(initCharts,100);
+
+document.addEventListener('linetab:change',function(e){
+  if(e.detail&&e.detail.tabId==='d-canary') setTimeout(function(){ElegantEChart.resize();},150);
+});
+
+/* ═══ REFRESH BUTTONS ═══ */
+var refreshMap={
+  'chRemoteAccess':'Remote Access Analytics',
+  'chSankey':'Attack Path Flow',
+  'chHeatmap':'Nodes vs Services Configured',
+  'chInternalIPs':'Top Internal Attacker IPs',
+  'chURLPaths':'Top Targeted URL Paths'
+};
+document.querySelectorAll('.card__toolbar button[data-tooltip="Refresh"]').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var card=btn.closest('.card');
+    if(!card) return;
+    var chartEl=card.querySelector('[id^="ch"]');
+    if(chartEl){
+      ElegantEChart.dispose(chartEl.id);
+      initCharts();
+      btn.style.animation='spin .6s ease';
+      setTimeout(function(){btn.style.animation='';},600);
+      return;
+    }
+    var wlRows=card.querySelector('#wl-rows');
+    if(wlRows){ buildWL(); return; }
+    var alWidget=card.querySelector('#oc-alert-list');
+    if(alWidget){ initAlertFeed(); return; }
+  });
+});
+</script>
+
+<!-- Predefined JS -->
+<script src="./predefined-components/topnavbar.js"></script>
+<script src="./predefined-components/sidemenu.js"></script>
+<script src="./predefined-components/line-tab.js"></script>
+<script src="./predefined-components/classic-tab.js"></script>
+<script src="./predefined-components/table.js"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
