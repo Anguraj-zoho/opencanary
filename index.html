@@ -24,7 +24,7 @@
     .dash-page { --dash-gap: 4px; font-family: var(--font-family); font-size: 12px; line-height: 1.5; color: #000; }
     .dash { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: var(--dash-gap); }
     .dash-master { display: grid; grid-template-columns: 1fr 380px; gap: var(--dash-gap); align-items: start; }
-    .dash-main { display: flex; flex-direction: column; gap: var(--dash-gap); min-width: 0; }
+    .dash-main { display: flex; flex-direction: column; gap: var(--dash-gap); min-width: 0; overflow: hidden; }
     .dash-sidebar { min-width: 0; position: sticky; top: 4px; }
     .dash-sidebar > .card { display: flex; flex-direction: column; overflow: hidden; background: #fff; max-height: calc(100vh - 120px); }
     .dash-sidebar .al-widget { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
@@ -243,7 +243,7 @@
                 </div>
 
                 <!-- Row 2: Attack Path (55%) + Heatmap (45%) -->
-                <div style="display:grid;grid-template-columns:55% 45%;gap:var(--dash-gap);">
+                <div style="display:grid;grid-template-columns:11fr 9fr;gap:var(--dash-gap);">
                   <div class="card">
                     <div class="ch">
                       <div><div class="ct">Attack Path Flow</div></div>
@@ -261,7 +261,7 @@
                 </div>
 
                 <!-- Row 3: Internal IPs (60%) + External IPs (40%) -->
-                <div style="display:grid;grid-template-columns:60% 40%;gap:var(--dash-gap);">
+                <div style="display:grid;grid-template-columns:3fr 2fr;gap:var(--dash-gap);">
                   <div class="card">
                     <div class="card__header">
                       <span class="card__title">Top Internal Attacker IPs</span>
