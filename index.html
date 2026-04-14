@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./predefined-components/topnavbar.css?v=6" />
   <link rel="stylesheet" href="./predefined-components/sidemenu.css?v=6" />
   <link rel="stylesheet" href="./predefined-components/header.css?v=6" />
+  <link rel="stylesheet" href="./predefined-components/classic-tab.css?v=6" />
   <link rel="stylesheet" href="./predefined-components/line-tab.css?v=6" />
   <link rel="stylesheet" href="./predefined-components/widget.css?v=6" />
   <link rel="stylesheet" href="./predefined-components/table.css?v=6" />
@@ -21,7 +22,41 @@
 
   <style>
     .main-content { overflow-y: auto; }
+    .topnavbar__tab--disabled { pointer-events: none; opacity: 0.5; }
+    .nav-page { display: none; flex: 1; overflow: hidden; }
+    .nav-page--active { display: contents; }
+
     .dash-page { --dash-gap: 4px; font-family: var(--font-family); font-size: 12px; line-height: 1.5; color: #000; }
+
+    /* ── Reports page ── */
+    .reports-page { display: flex; flex-direction: column; height: 100%; overflow: hidden; flex: 1; min-width: 0; }
+    .reports-page__quicklink { flex-shrink: 0; background: #FFFFFF; border-bottom: 1px solid #E9E9E9; padding: 0 8px; }
+    .reports-page__quicklink .line-tab--quicklink { background: transparent; }
+    .reports-page__quicklink .line-tab__header { color: #000; font-size: 12px; font-weight: 400; }
+    .reports-page__quicklink .line-tab__header--selected { background: #FFFFFF; font-weight: 500; }
+    .reports-page__quicklink .line-tab__header--unselected { background: transparent; }
+    .reports-page__quicklink .line-tab__arrow { width: 10px; height: 10px; opacity: .5; }
+    .reports-page__body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+    .reports-page__main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-y: auto; padding: 0 16px; }
+    .reports-page__main > * { width: 100%; box-sizing: border-box; }
+    .reports-page__main .data-table { width: 100%; table-layout: auto; }
+    .reports-input-row { display: flex; align-items: center; gap: 12px; padding: 0; }
+    .reports-input-row .rpt-textbox { height: 26px; border: 1px solid #C4C4C4; border-radius: 2px; font-size: 12px; font-family: var(--font-family); background: #fff; width: 280px; display: flex; align-items: center; overflow: hidden; box-sizing: border-box; }
+    .reports-input-row .rpt-textbox input { border: none; outline: none; font-size: 12px; font-family: var(--font-family); flex: 1; min-width: 0; background: transparent; padding: 3px 0 3px 12px; height: 100%; color: #000; }
+    .reports-input-row .rpt-textbox__icon-btn { width: 26px; height: 26px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #F5F5F5; border: none; border-left: 1px solid #C4C4C4; cursor: pointer; padding: 0; }
+    .reports-input-row .rpt-textbox__icon-btn:hover { background: #EBEBEB; }
+    .reports-input-row .rpt-textbox__icon-btn img { width: 14px; height: 14px; }
+    .reports-input-spacer { flex: 1; }
+    .rpt-filter-btn { height: 26px; border: 1px solid #ABABAB; border-radius: 2px; padding: 6px 16px; font-size: 12px; font-family: var(--font-family); background: #fff; color: #000; cursor: pointer; display: flex; align-items: center; gap: 8px; box-sizing: border-box; }
+    .rpt-filter-btn img { width: 12px; height: 12px; }
+    .rpt-filter-btn:hover { background: #F0F0F0; }
+    .rpt-header-btn { height: 24px; border: none; background: #fff; color: #000; font-size: 12px; font-family: var(--font-family); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 2px; white-space: nowrap; }
+    .rpt-header-btn:hover { background: #F0F0F0; }
+    .rpt-header-btn img { width: 12px; height: 12px; flex-shrink: 0; }
+    .reports-chart-wrap { width: 100%; min-height: 280px; }
+    .rpt-incident-btn { height: 24px; border: 1px solid #ABABAB; border-radius: 2px; padding: 5px 16px; font-size: 12px; font-family: var(--font-family); background: #fff; color: #000; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; box-sizing: border-box; }
+    .rpt-incident-btn:hover { background: #F0F0F0; }
+    .rpt-incident-btn img { width: 12px; height: 12px; flex-shrink: 0; }
     .dash { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: var(--dash-gap); }
     .dash-master { display: grid; grid-template-columns: 1fr 380px; gap: var(--dash-gap); align-items: start; }
     .dash-main { display: flex; flex-direction: column; gap: var(--dash-gap); min-width: 0; overflow: hidden; }
@@ -47,6 +82,22 @@
     .card__body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .card__chart { width: 100%; flex: 1; min-height: 280px; }
     .w-live { display: inline-flex; align-items: center; gap: 4px; background: rgba(221,22,22,0.08); color: #DD1616; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px; letter-spacing: .3px; margin-left: auto; }
+
+    /* ── Alert Feed Filters ── */
+    .af-filters { display: flex; align-items: center; gap: 8px; margin-top: 8px; margin-bottom: 12px; flex-shrink: 0; }
+    .af-pill { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 11px; font-family: var(--font-family); font-weight: 500; cursor: pointer; border: 1px solid #DCDCDC; background: #fff; color: #626262; transition: all .15s; user-select: none; }
+    .af-pill.af-pill--on { border-color: #DD1616; background: rgba(221,22,22,0.06); color: #DD1616; }
+    .af-select-wrap { position: relative; display: inline-flex; }
+    .af-select-btn { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 11px; font-family: var(--font-family); font-weight: 500; cursor: pointer; border: 1px solid #DCDCDC; background: #fff; color: #000; white-space: nowrap; }
+    .af-select-btn:hover { border-color: #ABABAB; }
+    .af-select-btn svg { width: 10px; height: 10px; stroke: #626262; flex-shrink: 0; }
+    .af-dropdown { position: absolute; top: calc(100% + 4px); right: 0; min-width: 160px; background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border: 1px solid #E9E9E9; padding: 4px 0; z-index: 100; display: none; }
+    .af-dropdown.af-dropdown--open { display: block; }
+    .af-dropdown-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; font-size: 12px; font-family: var(--font-family); color: #000; cursor: pointer; white-space: nowrap; }
+    .af-dropdown-item:hover { background: #F0F6FF; }
+    .af-dropdown-item .af-check { width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .af-dropdown-item .af-check svg { width: 14px; height: 14px; stroke: #2C66DD; stroke-width: 2.5; display: none; }
+    .af-dropdown-item.af-dropdown-item--active .af-check svg { display: block; }
 
     /* ── KPI Stat tiles ── */
     .tile-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--dash-gap); }
@@ -153,14 +204,14 @@
     <div class="topnavbar__row2">
       <div class="topnavbar__row2-container">
         <nav class="topnavbar__tabs">
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Dashboard</a>
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Reports</a>
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Compliance</a>
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Search</a>
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Thread Hub</a>
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Cloud Protection</a>
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Settings</a>
-          <a href="#" class="topnavbar__tab topnavbar__tab--unselected">Support</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected" data-nav-page="dashboard">Dashboard</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected" data-nav-page="reports">Reports</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected topnavbar__tab--disabled">Compliance</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected topnavbar__tab--disabled">Search</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected topnavbar__tab--disabled">Thread Hub</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected topnavbar__tab--disabled">Cloud Protection</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected" data-nav-page="settings">Settings</a>
+          <a href="#" class="topnavbar__tab topnavbar__tab--unselected topnavbar__tab--disabled">Support</a>
         </nav>
         <button class="topnavbar__more" title="More tabs" aria-label="Show all tabs">
           <img src="./assets/icons/icon-ab-more.svg" alt="" style="width:18px;height:18px;filter:brightness(10);" />
@@ -176,8 +227,11 @@
     </div>
   </header>
 
-  <!-- ═══ APP BODY — NO SIDEMENU (dashboard layout) ═══ -->
+  <!-- ═══ APP BODY ═══ -->
   <div class="app-body">
+
+    <!-- ═══ NAV PAGE: Dashboard ═══ -->
+    <div class="nav-page nav-page--active" data-nav-page="dashboard">
     <main class="main-content dash-page" style="padding:0;">
 
       <!-- ═══ LINE TAB — Variant 4 Dashboard ═══ -->
@@ -327,6 +381,28 @@
                     <div><div class="ct">OpenCanary Alerts Feed</div></div>
                     <span class="w-live"><i data-lucide="radio" style="width:12px;height:12px;"></i> LIVE</span>
                   </div>
+                  <div class="af-filters">
+                    <button class="af-pill af-pill--on" id="afHoneycredPill">honeycred=true</button>
+                    <div class="af-select-wrap">
+                      <button class="af-select-btn" id="afServiceBtn">
+                        <span id="afServiceLabel">All services</span>
+                        <svg viewBox="0 0 10 10" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5 L5 6.5 L8 3.5"/></svg>
+                      </button>
+                      <div class="af-dropdown" id="afDropdown">
+                        <div class="af-dropdown-item af-dropdown-item--active" data-service="all"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>All services</div>
+                        <div class="af-dropdown-item" data-service="SSH"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>SSH</div>
+                        <div class="af-dropdown-item" data-service="MSSQL"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>MSSQL</div>
+                        <div class="af-dropdown-item" data-service="HTTP"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>HTTP</div>
+                        <div class="af-dropdown-item" data-service="FTP"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>FTP</div>
+                        <div class="af-dropdown-item" data-service="RDP"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>RDP</div>
+                        <div class="af-dropdown-item" data-service="VNC"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>VNC</div>
+                        <div class="af-dropdown-item" data-service="Telnet"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>Telnet</div>
+                        <div class="af-dropdown-item" data-service="Redis"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>Redis</div>
+                        <div class="af-dropdown-item" data-service="MySQL"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>MySQL</div>
+                        <div class="af-dropdown-item" data-service="MongoDB"><span class="af-check"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 4"/></svg></span>MongoDB</div>
+                      </div>
+                    </div>
+                  </div>
                   <div class="al-widget" id="oc-alert-list"></div>
                 </div>
               </div><!-- /dash-sidebar -->
@@ -342,6 +418,440 @@
       </div><!-- /line-tab__body -->
 
     </main>
+    </div><!-- /nav-page dashboard -->
+
+    <!-- ═══ NAV PAGE: Reports ═══ -->
+    <div class="nav-page" data-nav-page="reports" style="display:none;">
+      <div class="reports-page">
+
+        <!-- QuickLink bar -->
+        <div class="reports-page__quicklink">
+          <div class="line-tab line-tab--quicklink">
+            <div class="line-tab__headers">
+              <button class="line-tab__header line-tab__header--selected" data-tab="ql-sw">Servers &amp; Workstation<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-ad">Active Directory<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-nd">Network Devices<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-cp">Cloud Protection<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-app">Applications<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-cs">Cloud Sources<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-fim">File Integrity Monitoring<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-threats">Threats<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-vm">VM Management<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-zoho">Zoho Apps<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-custom">Custom Reports<img class="line-tab__arrow" src="./assets/icons/icon-ql-arrow.svg" alt="" /></button>
+              <button class="line-tab__header line-tab__header--unselected" data-tab="ql-fav">Favorites</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-page__body">
+
+          <!-- Reports SideMenu (Type 2) -->
+          <aside class="sidemenu sidemenu--type2" data-active-item="All Events" id="reports-sidemenu">
+            <div class="sidemenu__scroll scrollbar-thin">
+              <div class="sidemenu__os-dropdown-wrap">
+                <div class="sidemenu__os-dropdown">
+                  <img src="./assets/icons/icon-os-windows.svg" alt="" class="sidemenu__os-icon" />
+                  <span class="sidemenu__os-label">Windows</span>
+                  <div class="sidemenu__os-arrow">
+                    <img src="./assets/icons/icon-sm-chevron-down.svg" alt="" />
+                  </div>
+                  <div class="sidemenu__os-options">
+                    <div class="sidemenu__os-option" data-label="Windows" data-icon="./assets/icons/icon-os-windows.svg">
+                      <img src="./assets/icons/icon-os-windows.svg" alt="" /> Windows
+                    </div>
+                    <div class="sidemenu__os-option" data-label="Unix/Linux" data-icon="./assets/icons/icon-os-linux.svg">
+                      <img src="./assets/icons/icon-os-linux.svg" alt="" /> Unix/Linux
+                    </div>
+                  </div>
+                </div>
+                <div class="sidemenu__divider"></div>
+                <div class="sidemenu__search">
+                  <img src="./assets/icons/icon-search-settings.svg" alt="" />
+                  <input type="text" placeholder="Search Reports (Ctrl+Space)" />
+                </div>
+              </div>
+
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Windows Events</span>
+                </button>
+                <a href="#" class="sidemenu__item" style="display:none">All Events</a>
+                <a href="#" class="sidemenu__item" style="display:none">Important Events</a>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Logon Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Logoff Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Trend Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Failed Logon Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>User Account Management</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Removable Disk Auditing</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>SUDO Commands</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Mail Server Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Threats Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>NFS Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Others</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>FTP Server Reports</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>System Events</span>
+                </button>
+              </div>
+              <div class="sidemenu__section">
+                <button class="sidemenu__l1 sidemenu__l1--flat">
+                  <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+                  <span>Device Severity Reports</span>
+                </button>
+              </div>
+            </div>
+            <div class="sidemenu__bottom-links">
+              <a href="#" class="sidemenu__bottom-link">
+                <img src="./assets/icons/icon-sm-clock.svg" alt="" style="width:14px;height:14px;" />
+                Scheduled Reports
+              </a>
+              <a href="#" class="sidemenu__bottom-link">
+                <img src="./assets/icons/icon-sm-manage.svg" alt="" style="width:14px;height:14px;" />
+                Manage Reports
+              </a>
+              <a href="#" class="sidemenu__bottom-link">
+                <img src="./assets/icons/icon-sm-bulb.svg" alt="" style="width:14px;height:14px;" />
+                Need New Reports ?
+              </a>
+            </div>
+            <div class="sidemenu__bottom">
+              <button class="sidemenu__bottom-btn" title="Collapse sidebar">
+                <img src="./assets/icons/icon-sm-collapse.svg" alt="" />
+              </button>
+            </div>
+          </aside>
+
+          <button class="sidemenu-expand" id="reportsSidebarExpand" title="Expand sidebar">
+            <img src="./assets/icons/icon-sm-collapse.svg" alt="" />
+          </button>
+
+          <!-- Reports Main Content -->
+          <main class="reports-page__main">
+
+            <!-- Header -->
+            <div class="page-header">
+              <h1 class="page-header__title">All Events</h1>
+              <button class="page-header__help" title="Help">
+                <img src="./assets/icons/icon-report-help.svg" alt="" style="width:14px;height:14px;" />
+              </button>
+              <div style="margin-left:auto; display:flex; align-items:center; gap:4px;">
+                <button class="rpt-header-btn"><img src="./assets/icons/icon-rpt-edit.svg" alt="" /><span>Edit Report</span></button>
+                <button class="rpt-header-btn"><img src="./assets/icons/icon-rpt-export.svg" alt="" /><span>Export As</span></button>
+                <button class="rpt-header-btn"><img src="./assets/icons/icon-rpt-schedule.svg" alt="" /><span>Schedule Reports</span></button>
+                <button class="rpt-header-btn"><img src="./assets/icons/icon-rpt-more.svg" alt="" /><span>More</span></button>
+              </div>
+            </div>
+
+            <!-- Input Row -->
+            <div class="reports-input-row" style="padding:16px 0;">
+              <div class="rpt-textbox">
+                <input type="text" value="192.168.11.13,192.168.7.4,192.." />
+                <button class="rpt-textbox__icon-btn" title="Add"><img src="./assets/icons/icon-input-plus.svg" alt="" /></button>
+              </div>
+              <button class="rpt-filter-btn"><img src="./assets/icons/icon-input-filter.svg" alt="" /><span>Filter</span></button>
+              <div class="reports-input-spacer"></div>
+              <div class="rpt-textbox">
+                <input type="text" value="2025-12-31  to  2026-12-31" />
+                <button class="rpt-textbox__icon-btn" title="Calendar"><img src="./assets/icons/icon-input-calendar.svg" alt="" /></button>
+              </div>
+            </div>
+
+            <!-- Classic Tab (with chart) -->
+            <div class="classic-tab" id="reports-classic-tab" style="padding-top:0;">
+              <div class="classic-tab__headers">
+                <button class="classic-tab__header classic-tab__header--selected">All Events</button>
+                <button class="classic-tab__header classic-tab__header--unselected">Top Source</button>
+                <button class="classic-tab__header classic-tab__header--unselected">Top Devices</button>
+                <div class="classic-tab__filler"></div>
+                <div style="width:28px;height:32px;display:flex;align-items:center;justify-content:center;padding:7px;box-sizing:border-box;background:#E9E9E9;border:1px solid #DCDCDC;margin-left:-1px;flex-shrink:0;">
+                  <img src="./assets/icons/icon-report-settings.svg" alt="Settings" style="width:14px;height:14px;cursor:pointer;opacity:.6;" />
+                </div>
+              </div>
+              <div class="classic-tab__body scrollbar-thin">
+                <div class="classic-tab__content" style="padding-bottom:16px;">
+                  <div class="reports-chart-wrap" id="reports-severity-chart"></div>
+                </div>
+                <div class="classic-tab__content" style="display:none;padding-bottom:16px;">
+                  <div class="reports-chart-wrap" id="reports-top-source-chart"></div>
+                </div>
+                <div class="classic-tab__content" style="display:none;padding-bottom:16px;">
+                  <div class="reports-chart-wrap" id="reports-top-devices-chart"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table with ActionBar -->
+            <div style="flex:1; display:flex; flex-direction:column; min-height:0; margin-top:16px;">
+              <div class="actionbar">
+                <div class="actionbar__left">
+                  <button class="actionbar__icon-btn" title="Search"><img src="./assets/icons/icon-ab-search.svg" alt="" style="width:14px;height:14px;" /></button>
+                  <div class="actionbar__separator"></div>
+                  <button class="rpt-incident-btn"><img src="./assets/icons/icon-ab-plus.svg" alt="" /><span>Incident</span></button>
+                </div>
+                <div class="actionbar__right">
+                  <span class="actionbar__pagination">1-25 <i>of</i> <b>100</b></span>
+                  <button class="actionbar__nav-btn" title="Previous"><img src="./assets/icons/icon-ab-arrow-left.svg" alt="" /></button>
+                  <button class="actionbar__nav-btn" title="Next"><img src="./assets/icons/icon-ab-arrow-right.svg" alt="" /></button>
+                  <div class="actionbar__separator"></div>
+                  <button class="actionbar__icon-btn" title="Column View"><img src="./assets/icons/icon-ab-column.svg" alt="" style="width:14px;height:14px;" /></button>
+                </div>
+              </div>
+
+              <div class="data-table-wrap" style="flex:1; overflow:auto;">
+                <table class="data-table" style="width:100%;">
+                  <colgroup>
+                    <col style="width:40px;" />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col style="width:25%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th class="cell-checkbox"><img src="./assets/icons/icon-checkbox.svg" alt="" /></th>
+                      <th>Time</th>
+                      <th>Log Source</th>
+                      <th>Display Name</th>
+                      <th>Source</th>
+                      <th>Severity</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reports-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </main>
+        </div>
+      </div>
+    </div><!-- /nav-page reports -->
+
+    <!-- ═══ NAV PAGE: Settings ═══ -->
+    <div class="nav-page" data-nav-page="settings" style="display:none;">
+
+      <!-- Settings SideMenu -->
+      <aside class="sidemenu" data-active-item="Applications" id="settings-sidemenu">
+        <div class="sidemenu__scroll scrollbar-thin">
+          <div class="sidemenu__search-wrap">
+            <div class="sidemenu__search">
+              <img src="./assets/icons/icon-search-settings.svg" alt="" />
+              <input type="text" placeholder="Search Settings" />
+            </div>
+          </div>
+          <div class="sidemenu__section">
+            <button class="sidemenu__l1">
+              <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+              <img src="./assets/icons/icon-troubleshoot.svg" alt="" class="sidemenu__l1-icon" />
+              <span>Log Source Configuration</span>
+            </button>
+            <a href="#" class="sidemenu__item" style="display:none">Devices</a>
+            <a href="#" class="sidemenu__item" style="display:none">Applications</a>
+            <a href="#" class="sidemenu__item" style="display:none">Import Logs</a>
+            <a href="#" class="sidemenu__item" style="display:none">Manage Cloud Sources</a>
+            <a href="#" class="sidemenu__item" style="display:none">File Integrity Monitoring</a>
+            <a href="#" class="sidemenu__item" style="display:none">Log Forwarding</a>
+          </div>
+          <div class="sidemenu__section">
+            <button class="sidemenu__l1">
+              <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+              <img src="./assets/icons/icon-admin-settings.svg" alt="" class="sidemenu__l1-icon" />
+              <span>Admin Settings</span>
+            </button>
+            <div class="sidemenu__l2-subheader" style="display:none">Management</div>
+            <a href="#" class="sidemenu__item" style="display:none">Manage Agents</a>
+            <a href="#" class="sidemenu__item" style="display:none">Manage Log Source Groups</a>
+            <a href="#" class="sidemenu__item" style="display:none">User Management</a>
+            <a href="#" class="sidemenu__item" style="display:none">Technician Audit</a>
+            <a href="#" class="sidemenu__item" style="display:none">Threat Management</a>
+            <a href="#" class="sidemenu__item" style="display:none">Account Settings</a>
+            <a href="#" class="sidemenu__item" style="display:none">Listener Ports</a>
+            <a href="#" class="sidemenu__item" style="display:none">Auto Device Configration</a>
+            <div class="sidemenu__l2-subheader" style="display:none">MarketPlace</div>
+            <a href="#" class="sidemenu__item" style="display:none">All Extensions</a>
+            <a href="#" class="sidemenu__item" style="display:none">Installed Extensions</a>
+            <a href="#" class="sidemenu__item" style="display:none">Extension Profiles</a>
+            <div class="sidemenu__l2-subheader" style="display:none">Product Customization</div>
+            <a href="#" class="sidemenu__item" style="display:none">Product Settings</a>
+            <a href="#" class="sidemenu__item" style="display:none">Privacy Settings</a>
+            <a href="#" class="sidemenu__item" style="display:none">Working Hour Settings</a>
+            <a href="#" class="sidemenu__item" style="display:none">Custom Log Format</a>
+            <div class="sidemenu__l2-subheader" style="display:none">Data Storage</div>
+            <a href="#" class="sidemenu__item" style="display:none">Storage Tiers</a>
+            <a href="#" class="sidemenu__item" style="display:none">Log Collection Filters</a>
+            <a href="#" class="sidemenu__item" style="display:none">Reload Archive Logs</a>
+            <a href="#" class="sidemenu__item" style="display:none">Log Forwarding</a>
+            <div class="sidemenu__l2-subheader" style="display:none">General</div>
+            <a href="#" class="sidemenu__item" style="display:none">My Account</a>
+            <a href="#" class="sidemenu__item" style="display:none">Tags</a>
+            <a href="#" class="sidemenu__item" style="display:none">License</a>
+            <div class="sidemenu__l2-subheader" style="display:none">Developer Space</div>
+            <a href="#" class="sidemenu__item" style="display:none">Custom Widgets</a>
+            <div class="sidemenu__l2-subheader" style="display:none">Zia</div>
+            <a href="#" class="sidemenu__item" style="display:none">Insights</a>
+          </div>
+          <div class="sidemenu__section">
+            <button class="sidemenu__l1">
+              <img src="./assets/icons/icon-sm-chevron-right.svg" alt="" class="sidemenu__chevron" />
+              <img src="./assets/icons/icon-system-settings.svg" alt="" class="sidemenu__l1-icon" />
+              <span>System Settings</span>
+            </button>
+            <a href="#" class="sidemenu__item" style="display:none">Server CA Management</a>
+            <a href="#" class="sidemenu__item" style="display:none">Certificate Trust Store</a>
+          </div>
+        </div>
+        <div class="sidemenu__bottom">
+          <button class="sidemenu__bottom-btn" title="Collapse sidebar">
+            <img src="./assets/icons/icon-slider-close.svg" alt="" />
+          </button>
+        </div>
+      </aside>
+
+      <button class="sidemenu-expand" id="settingsSidebarExpand" title="Expand sidebar">
+        <img src="./assets/icons/icon-slider-close.svg" alt="" />
+      </button>
+
+      <!-- Settings Main Content -->
+      <main class="main-content">
+        <div class="page-header">
+          <h1 class="page-header__title">Applications</h1>
+          <button class="page-header__help" title="Help">
+            <img src="./assets/icons/icon-help.svg" alt="" style="width:14px;height:14px;" />
+          </button>
+        </div>
+        <div class="classic-tab">
+          <div class="classic-tab__headers">
+            <button class="classic-tab__header classic-tab__header--selected">General Applications</button>
+            <button class="classic-tab__header classic-tab__header--unselected">Security Applications</button>
+            <button class="classic-tab__header classic-tab__header--unselected">Print Server</button>
+            <div class="classic-tab__filler"></div>
+          </div>
+          <div class="classic-tab__body scrollbar-thin">
+            <div class="classic-tab__content">
+              <div class="button-row" style="padding-top:0;">
+                <button class="btn-primary">
+                  <img src="./assets/icons/icon-plus.svg" alt="" style="width:10px;height:10px;filter:brightness(0) invert(1);" />
+                  <span>Add General Applications</span>
+                </button>
+              </div>
+              <div class="actionbar">
+                <div class="actionbar__left">
+                  <button class="actionbar__icon-btn" title="Search"><img src="./assets/icons/icon-actionbar-search.svg" alt="" /></button>
+                  <div class="actionbar__separator"></div>
+                  <button class="actionbar__icon-btn" title="Filter"><img src="./assets/icons/icon-actionbar-filter.svg" alt="" /></button>
+                </div>
+                <div class="actionbar__right">
+                  <span class="actionbar__pagination">1-25 <i>of</i> <b>100</b></span>
+                  <button class="actionbar__nav-btn" title="Previous"><img src="./assets/icons/icon-chevron-left.svg" alt="" /></button>
+                  <button class="actionbar__nav-btn" title="Next"><img src="./assets/icons/icon-chevron-right.svg" alt="" /></button>
+                  <div class="actionbar__separator"></div>
+                  <button class="actionbar__icon-btn actionbar__icon-btn--view" title="View"><img src="./assets/icons/icon-view-type.svg" alt="" /></button>
+                  <div class="actionbar__separator"></div>
+                  <button class="actionbar__icon-btn" title="Refresh"><img src="./assets/icons/icon-actionbar-refresh.svg" alt="" /></button>
+                </div>
+              </div>
+              <div class="data-table-wrap">
+                <table class="data-table">
+                  <colgroup>
+                    <col style="width:48px;min-width:48px;" />
+                    <col style="width:130px;min-width:110px;" />
+                    <col style="width:120px;min-width:100px;" />
+                    <col style="width:140px;min-width:120px;" />
+                    <col style="width:130px;min-width:110px;" />
+                    <col style="width:155px;min-width:130px;" />
+                    <col style="width:100px;min-width:80px;" />
+                    <col style="width:90px;min-width:80px;" />
+                    <col style="width:130px;min-width:110px;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th class="cell-checkbox"><img src="./assets/icons/icon-checkbox.svg" alt="" /></th>
+                      <th>Actions</th>
+                      <th>Log Source</th>
+                      <th>Log Source Type</th>
+                      <th>Agent</th>
+                      <th>Last Message Time</th>
+                      <th>Next Scan On</th>
+                      <th>Status</th>
+                      <th>Reports/Logs View</th>
+                    </tr>
+                  </thead>
+                  <tbody id="settings-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div><!-- /nav-page settings -->
+
   </div>
 </div>
 
@@ -636,6 +1146,74 @@ buildWL();
 initAlertFeed();
 setTimeout(initCharts,100);
 
+/* ═══ ALERT FEED FILTER (honeycred pill + service dropdown) ═══ */
+(function initAlertFilters() {
+  var honeycredPill = document.getElementById('afHoneycredPill');
+  var serviceBtn    = document.getElementById('afServiceBtn');
+  var serviceLabel  = document.getElementById('afServiceLabel');
+  var dropdown      = document.getElementById('afDropdown');
+  var alertContainer= document.getElementById('oc-alert-list');
+  if (!honeycredPill || !serviceBtn || !dropdown || !alertContainer) return;
+
+  var currentService = 'all';
+  var honeycredOnly  = true;
+
+  function getAlertService(row) {
+    var tags = row.querySelectorAll('.al-tag');
+    var svc = '';
+    for (var i = 0; i < tags.length; i++) {
+      var t = tags[i].textContent.trim().toUpperCase();
+      if (t !== 'HONEYCRED' && t !== 'EXTERNAL' && t !== 'TOR') { svc = tags[i].textContent.trim(); break; }
+    }
+    return svc;
+  }
+
+  function hasHoneycred(row) {
+    var tags = row.querySelectorAll('.al-tag');
+    for (var i = 0; i < tags.length; i++) {
+      if (tags[i].textContent.trim().toUpperCase() === 'HONEYCRED') return true;
+    }
+    return false;
+  }
+
+  function applyFilters() {
+    var rows = alertContainer.querySelectorAll('.al-row');
+    rows.forEach(function(row) {
+      var svc = getAlertService(row);
+      var matchService = (currentService === 'all') || (svc.toUpperCase() === currentService.toUpperCase());
+      var matchHoneycred = !honeycredOnly || hasHoneycred(row);
+      row.style.display = (matchService && matchHoneycred) ? '' : 'none';
+    });
+  }
+
+  honeycredPill.addEventListener('click', function() {
+    honeycredOnly = !honeycredOnly;
+    honeycredPill.classList.toggle('af-pill--on', honeycredOnly);
+    applyFilters();
+  });
+
+  serviceBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    dropdown.classList.toggle('af-dropdown--open');
+  });
+
+  dropdown.querySelectorAll('.af-dropdown-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      e.stopPropagation();
+      currentService = item.getAttribute('data-service');
+      serviceLabel.textContent = currentService === 'all' ? 'All services' : currentService;
+      dropdown.querySelectorAll('.af-dropdown-item').forEach(function(di) { di.classList.remove('af-dropdown-item--active'); });
+      item.classList.add('af-dropdown-item--active');
+      dropdown.classList.remove('af-dropdown--open');
+      applyFilters();
+    });
+  });
+
+  document.addEventListener('click', function() {
+    dropdown.classList.remove('af-dropdown--open');
+  });
+})();
+
 document.addEventListener('linetab:change',function(e){
   if(e.detail&&e.detail.tabId==='d-canary') setTimeout(function(){ElegantEChart.resize();},150);
 });
@@ -668,9 +1246,330 @@ document.querySelectorAll('.card__toolbar button[data-tooltip="Refresh"]').forEa
 });
 </script>
 
+<!-- ═══ SETTINGS TABLE DATA ═══ -->
+<script>
+var ICON = './assets/icons/';
+var settingsData = [
+  { ip:'192.168.2.2',  type:'Syslog Collector',    agent:'logqa-w16-jp1', lastMsg:'2026-01-29 17:05:39', nextScan:'-', status:'Enabled',  link:'View Reports' },
+  { ip:'192.168.2.5',  type:'Windows Agent',        agent:'logqa-w16-jp1', lastMsg:'2026-01-29 17:04:12', nextScan:'2026-01-29 17:30:00', status:'Enabled',  link:'View Logs' },
+  { ip:'192.168.2.10', type:'Linux Agent',           agent:'logqa-w16-jp1', lastMsg:'2026-01-29 17:05:37', nextScan:'-', status:'Enabled',  link:'View Reports' },
+  { ip:'192.168.2.12', type:'ITOM solution',         agent:'logqa-w16-jp1', lastMsg:'2026-01-28 20:15:00', nextScan:'2026-01-29 08:00:00', status:'Enabled',  link:'View Logs' },
+  { ip:'192.168.2.15', type:'Syslog Collector',      agent:'logqa-w16-jp1', lastMsg:'2026-01-29 17:05:35', nextScan:'-', status:'Enabled',  link:'View Reports' },
+  { ip:'192.168.2.20', type:'Windows Agent',          agent:'logqa-w16-jp1', lastMsg:'2026-01-29 16:58:22', nextScan:'2026-01-29 17:30:00', status:'Disabled', link:'View Logs' },
+  { ip:'192.168.3.1',  type:'Custom Log Parser',     agent:'logqa-w16-jp1', lastMsg:'2026-01-27 11:40:05', nextScan:'-', status:'Disabled', link:'View Logs' },
+  { ip:'192.168.3.5',  type:'Cloud Source Connector', agent:'logqa-w16-jp1', lastMsg:'2026-01-29 17:02:10', nextScan:'2026-01-29 17:15:00', status:'Enabled',  link:'View Reports' },
+  { ip:'192.168.4.1',  type:'Syslog Collector',      agent:'logqa-w16-jp1', lastMsg:'2026-01-29 15:30:44', nextScan:'-', status:'Enabled',  link:'View Logs' },
+  { ip:'192.168.2.8',  type:'ITOM solution',          agent:'logqa-w16-jp1', lastMsg:'2026-01-12 19:57:36', nextScan:'-', status:'Disabled', link:'View Logs' }
+];
+var stBody = document.getElementById('settings-table-body');
+if (stBody) {
+  settingsData.forEach(function (row) {
+    var tr = document.createElement('tr');
+    var statusIcon = row.status === 'Enabled' ? 'icon-status-success.svg' : 'icon-status-disabled.svg';
+    tr.innerHTML =
+      '<td class="cell-checkbox"><img src="' + ICON + 'icon-checkbox.svg" alt="" /></td>' +
+      '<td><div class="cell-actions"><img src="' + ICON + 'icon-action-approve.svg" alt="Approve" /><img src="' + ICON + 'icon-action-edit.svg" alt="Edit" /><img src="' + ICON + 'icon-action-delete.svg" alt="Delete" /><img src="' + ICON + 'icon-action-more.svg" alt="More" /></div></td>' +
+      '<td>' + row.ip + '</td>' +
+      '<td>' + row.type + '</td>' +
+      '<td><div class="cell-icon-text"><img src="' + ICON + 'icon-agent.svg" alt="" /><span>' + row.agent + '</span></div></td>' +
+      '<td>' + row.lastMsg + '</td>' +
+      '<td>' + row.nextScan + '</td>' +
+      '<td><div class="cell-status"><img src="' + ICON + statusIcon + '" alt="" /><span>' + row.status + '</span></div></td>' +
+      '<td><a href="#" class="cell-link">' + row.link + '</a></td>';
+    stBody.appendChild(tr);
+  });
+}
+
+/* ═══ REPORTS TABLE DATA ═══ */
+var reportsData = [
+  { time:'2026-01-29 17:05:39', logSrc:'192.168.2.2',  display:'192.168.2.2',  src:'sendmail', sev:'information', msg:'sElog3D(1930: to <u...' },
+  { time:'2026-01-29 17:05:39', logSrc:'192.168.2.2',  display:'192.168.2.2',  src:'sendmail', sev:'information', msg:'sElog3D(1930: tr <u...' },
+  { time:'2026-01-29 17:05:39', logSrc:'192.168.2.10', display:'192.168.2.0',  src:'mgd',      sev:'debug',       msg:'Could not send me...' },
+  { time:'2026-01-29 17:05:39', logSrc:'192.168.2.2',  display:'192.168.2.2',  src:'sendmail', sev:'information', msg:'sElog3D(1930: fro...' },
+  { time:'2026-01-29 17:05:39', logSrc:'192.150.2.15', display:'192.168.2.15', src:'bsod',     sev:'notice',      msg:'notice mqd(14917)...' },
+  { time:'2026-01-29 17:05:38', logSrc:'192.168.2.2',  display:'192.168.2.2',  src:'sendmail', sev:'information', msg:'UE_LOGIN_EVENT...' },
+  { time:'2026-01-29 17:05:37', logSrc:'192.168.2.15', display:'192.168.2.15', src:'bsod',     sev:'notice',      msg:'notice frrm(10425)...' },
+  { time:'2026-01-29 17:05:37', logSrc:'192.168.2.15', display:'192.168.2.15', src:'bsod',     sev:'notice',      msg:'notice frrm(18561)...' },
+  { time:'2026-01-29 17:05:37', logSrc:'192.168.2.15', display:'192.168.2.15', src:'bsod',     sev:'notice',      msg:'notice frrm(10725)...' },
+  { time:'2026-01-29 17:05:35', logSrc:'192.168.2.10', display:'192.168.2.19', src:'mgd',      sev:'information', msg:'UE_JAVASCRIPT_CMD...' }
+];
+var rptTbody = document.getElementById('reports-table-body');
+if (rptTbody) {
+  reportsData.forEach(function (r) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="cell-checkbox"><img src="' + ICON + 'icon-checkbox.svg" alt="" /></td>' +
+      '<td>' + r.time + '</td>' +
+      '<td>' + r.logSrc + '</td>' +
+      '<td>' + r.display + '</td>' +
+      '<td>' + r.src + '</td>' +
+      '<td>' + r.sev + '</td>' +
+      '<td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + r.msg + '</td>';
+    rptTbody.appendChild(tr);
+  });
+}
+
+/* ═══ REPORTS CHART INIT ═══ */
+var reportsChartInitDone = false;
+function initReportsCharts() {
+  if (reportsChartInitDone) { ElegantEChart.resize(); return; }
+  reportsChartInitDone = true;
+
+  var xLabels = ['192.168.2.2','192.168.2.5','192.168.2.10','192.168.2.12','192.168.2.15','192.168.2.20','192.168.3.1','192.168.3.5','192.168.4.1','192.168.5.2'];
+
+  ElegantEChart.bar('reports-severity-chart', {
+    labels: xLabels,
+    datasets: [
+      { label: 'Emergency',   color: '#8B1A1A', values: [30, 10, 20, 5, 15, 10, 8, 12, 5, 3] },
+      { label: 'Alert',       color: '#DD1616', values: [50, 25, 35, 15, 30, 20, 15, 22, 10, 8] },
+      { label: 'Critical',    color: '#FF5900', values: [80, 40, 55, 25, 45, 35, 25, 30, 18, 12] },
+      { label: 'Error',       color: '#FABB34', values: [120, 60, 85, 40, 70, 50, 35, 48, 25, 18] },
+      { label: 'Warning',     color: '#198019', values: [200, 100, 150, 75, 120, 90, 60, 80, 45, 30] },
+      { label: 'Notice',      color: '#2C66DD', values: [350, 180, 260, 130, 220, 160, 110, 140, 75, 55] },
+      { label: 'Information', color: '#6B9AFF', values: [550, 300, 420, 200, 380, 270, 180, 230, 120, 90] },
+      { label: 'Debug',       color: '#B6D0FF', values: [700, 480, 600, 350, 530, 400, 280, 360, 200, 150] }
+    ]
+  }, { stacked: true });
+
+  ElegantEChart.bar('reports-top-source-chart', {
+    labels: xLabels,
+    datasets: [
+      { label: 'Count', color: '#2C66DD', values: [720, 490, 610, 355, 540, 410, 285, 370, 205, 155] }
+    ]
+  });
+
+  ElegantEChart.bar('reports-top-devices-chart', {
+    labels: xLabels,
+    datasets: [
+      { label: 'Count', color: '#2C66DD', values: [680, 450, 580, 320, 500, 380, 260, 340, 190, 140] }
+    ]
+  });
+}
+
+/* ═══ TOP NAV PAGE SWITCHING ═══ */
+var NAV_PAGE_MAP = { 'Dashboard': 'dashboard', 'Settings': 'settings', 'Reports': 'reports' };
+var navPages = document.querySelectorAll('.nav-page');
+
+function switchNavPage(tabName) {
+  var targetPage = NAV_PAGE_MAP[tabName];
+  if (!targetPage) return;
+  navPages.forEach(function (p) {
+    if (p.getAttribute('data-nav-page') === targetPage) {
+      p.style.display = '';
+      p.classList.add('nav-page--active');
+    } else {
+      p.style.display = 'none';
+      p.classList.remove('nav-page--active');
+    }
+  });
+  if (targetPage === 'reports') {
+    setTimeout(function () { initReportsCharts(); }, 150);
+  }
+  if (targetPage === 'dashboard') {
+    setTimeout(function () { ElegantEChart.resize(); }, 150);
+  }
+}
+
+var topnavHeader = document.querySelector('.topnavbar');
+if (topnavHeader) {
+  var observer = new MutationObserver(function (mutations) {
+    mutations.forEach(function (m) {
+      if (m.attributeName === 'data-active-tab') {
+        switchNavPage(topnavHeader.getAttribute('data-active-tab'));
+      }
+    });
+  });
+  observer.observe(topnavHeader, { attributes: true, attributeFilter: ['data-active-tab'] });
+}
+
+/* ═══ SETTINGS SIDEMENU — FULL INIT ═══ */
+var CHEVRON_DOWN_URL  = './assets/icons/icon-sm-chevron-down.svg';
+var CHEVRON_RIGHT_URL = './assets/icons/icon-sm-chevron-right.svg';
+
+(function initSettingsSidemenu() {
+  var sm = document.getElementById('settings-sidemenu');
+  if (!sm) return;
+
+  var activeItemName = sm.getAttribute('data-active-item');
+  sm.querySelectorAll('.sidemenu__item').forEach(function (item) {
+    if (item.textContent.trim() === activeItemName) {
+      item.classList.add('sidemenu__item--active');
+      var section = item.closest('.sidemenu__section');
+      if (section) {
+        var chevron = section.querySelector('.sidemenu__chevron');
+        section.querySelectorAll('.sidemenu__item, .sidemenu__l2-subheader').forEach(function (el) { el.style.display = ''; });
+        if (chevron) chevron.src = CHEVRON_DOWN_URL;
+      }
+    }
+  });
+
+  sm.querySelectorAll('.sidemenu__l1').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var section = btn.closest('.sidemenu__section');
+      var chevron = btn.querySelector('.sidemenu__chevron');
+      var items = section.querySelectorAll('.sidemenu__item, .sidemenu__l2-subheader');
+      if (items.length === 0) return;
+      var isOpen = items[0].style.display !== 'none';
+      items.forEach(function (it) { it.style.display = isOpen ? 'none' : ''; });
+      if (chevron) chevron.src = isOpen ? CHEVRON_RIGHT_URL : CHEVRON_DOWN_URL;
+    });
+  });
+
+  sm.querySelectorAll('.sidemenu__item').forEach(function (item) {
+    item.addEventListener('click', function (e) {
+      e.preventDefault();
+      sm.querySelectorAll('.sidemenu__item--active').forEach(function (el) { el.classList.remove('sidemenu__item--active'); });
+      item.classList.add('sidemenu__item--active');
+      sm.setAttribute('data-active-item', item.textContent.trim());
+    });
+  });
+
+  var searchInput = sm.querySelector('.sidemenu__search input');
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      var query = searchInput.value.toLowerCase().trim();
+      sm.querySelectorAll('.sidemenu__item, .sidemenu__l2-subheader').forEach(function (el) {
+        el.style.display = (!query || el.textContent.toLowerCase().includes(query)) ? '' : 'none';
+      });
+    });
+  }
+
+  var collapseBtn = sm.querySelector('.sidemenu__bottom-btn');
+  var expandBtn = document.getElementById('settingsSidebarExpand');
+  if (collapseBtn && expandBtn) {
+    collapseBtn.addEventListener('click', function () {
+      if (sm.classList.contains('sidemenu--collapsed')) {
+        sm.classList.remove('sidemenu--collapsed');
+        expandBtn.classList.remove('sidemenu-expand--visible');
+      } else {
+        sm.classList.add('sidemenu--collapsed');
+        expandBtn.classList.add('sidemenu-expand--visible');
+      }
+    });
+    expandBtn.addEventListener('click', function () {
+      sm.classList.remove('sidemenu--collapsed');
+      expandBtn.classList.remove('sidemenu-expand--visible');
+    });
+  }
+})();
+
+/* ═══ REPORTS SIDEMENU — FULL INIT ═══ */
+(function initReportsSidemenu() {
+  var rsm = document.getElementById('reports-sidemenu');
+  if (!rsm) return;
+
+  var activeItemName = rsm.getAttribute('data-active-item');
+  rsm.querySelectorAll('.sidemenu__item').forEach(function (item) {
+    if (item.textContent.trim() === activeItemName) {
+      item.classList.add('sidemenu__item--active');
+      var section = item.closest('.sidemenu__section');
+      if (section) {
+        var chevron = section.querySelector('.sidemenu__chevron');
+        section.querySelectorAll('.sidemenu__item').forEach(function (el) { el.style.display = ''; });
+        if (chevron) chevron.src = CHEVRON_DOWN_URL;
+      }
+    }
+  });
+
+  rsm.querySelectorAll('.sidemenu__l1--flat').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var section = btn.closest('.sidemenu__section');
+      var chevron = btn.querySelector('.sidemenu__chevron');
+      var items = section.querySelectorAll('.sidemenu__item');
+      if (items.length === 0) return;
+      var isOpen = items[0].style.display !== 'none';
+      items.forEach(function (el) { el.style.display = isOpen ? 'none' : ''; });
+      if (chevron) chevron.src = isOpen ? CHEVRON_RIGHT_URL : CHEVRON_DOWN_URL;
+    });
+  });
+
+  rsm.querySelectorAll('.sidemenu__item').forEach(function (item) {
+    item.addEventListener('click', function (e) {
+      e.preventDefault();
+      rsm.querySelectorAll('.sidemenu__item--active').forEach(function (el) { el.classList.remove('sidemenu__item--active'); });
+      rsm.querySelectorAll('.sidemenu__l1--active').forEach(function (el) { el.classList.remove('sidemenu__l1--active'); });
+      item.classList.add('sidemenu__item--active');
+      rsm.setAttribute('data-active-item', item.textContent.trim());
+    });
+  });
+
+  var dd = rsm.querySelector('.sidemenu__os-dropdown');
+  if (dd) {
+    var opts = dd.querySelector('.sidemenu__os-options');
+    dd.addEventListener('click', function (e) { e.stopPropagation(); if (opts) opts.classList.toggle('sidemenu__os-options--open'); });
+    if (opts) {
+      opts.querySelectorAll('.sidemenu__os-option').forEach(function (opt) {
+        opt.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var osLabel = dd.querySelector('.sidemenu__os-label');
+          var osIcon = dd.querySelector('.sidemenu__os-icon');
+          if (osLabel) osLabel.textContent = opt.getAttribute('data-label');
+          if (osIcon && opt.getAttribute('data-icon')) osIcon.src = opt.getAttribute('data-icon');
+          opts.classList.remove('sidemenu__os-options--open');
+        });
+      });
+      document.addEventListener('click', function () { opts.classList.remove('sidemenu__os-options--open'); });
+    }
+  }
+
+  var searchInput = rsm.querySelector('.sidemenu__search input');
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      var query = searchInput.value.toLowerCase().trim();
+      rsm.querySelectorAll('.sidemenu__section').forEach(function (section) {
+        var l1 = section.querySelector('.sidemenu__l1--flat');
+        var items = section.querySelectorAll('.sidemenu__item');
+        var l1Text = l1 ? l1.textContent.toLowerCase() : '';
+        var anyVisible = false;
+        if (!query) { if (l1) l1.style.display = ''; items.forEach(function (it) { it.style.display = 'none'; }); return; }
+        if (l1Text.includes(query)) { if (l1) l1.style.display = ''; anyVisible = true; }
+        items.forEach(function (it) {
+          if (it.textContent.toLowerCase().includes(query)) { it.style.display = ''; anyVisible = true; } else { it.style.display = 'none'; }
+        });
+        if (l1) l1.style.display = anyVisible ? '' : 'none';
+      });
+    });
+  }
+
+  var collapseBtn = rsm.querySelector('.sidemenu__bottom-btn');
+  var expandBtn = document.getElementById('reportsSidebarExpand');
+  if (collapseBtn && expandBtn) {
+    collapseBtn.addEventListener('click', function () {
+      if (rsm.classList.contains('sidemenu--collapsed')) {
+        rsm.classList.remove('sidemenu--collapsed');
+        expandBtn.classList.remove('sidemenu-expand--visible');
+      } else {
+        rsm.classList.add('sidemenu--collapsed');
+        expandBtn.classList.add('sidemenu-expand--visible');
+      }
+    });
+    expandBtn.addEventListener('click', function () {
+      rsm.classList.remove('sidemenu--collapsed');
+      expandBtn.classList.remove('sidemenu-expand--visible');
+    });
+  }
+})();
+
+/* ═══ REPORTS CLASSIC TAB SWITCHING ═══ */
+var rptTab = document.getElementById('reports-classic-tab');
+if (rptTab) {
+  var rptHeaders = rptTab.querySelectorAll('.classic-tab__header');
+  var rptContents = rptTab.querySelectorAll('.classic-tab__content');
+  rptHeaders.forEach(function (h, idx) {
+    h.addEventListener('click', function () {
+      rptHeaders.forEach(function (hh) { hh.classList.remove('classic-tab__header--selected'); hh.classList.add('classic-tab__header--unselected'); });
+      h.classList.add('classic-tab__header--selected');
+      h.classList.remove('classic-tab__header--unselected');
+      rptContents.forEach(function (c, ci) { c.style.display = ci === idx ? '' : 'none'; });
+      setTimeout(function () { ElegantEChart.resize(); }, 100);
+    });
+  });
+}
+</script>
+
 <!-- Predefined JS -->
 <script src="./predefined-components/topnavbar.js"></script>
-<script src="./predefined-components/sidemenu.js"></script>
+<!-- sidemenu.js excluded — custom init above handles both sidemenus by ID to avoid double-binding -->
 <script src="./predefined-components/line-tab.js"></script>
 <script src="./predefined-components/classic-tab.js"></script>
 <script src="./predefined-components/table.js"></script>
