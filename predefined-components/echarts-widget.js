@@ -32,6 +32,7 @@
  *   ElegantEChart.alertType3(domId, data, options)  — prioritized alerts (critical + SLA)
  *   ElegantEChart.suspectList(domId, data, options) — top suspects with risk bars
  *   ElegantEChart.tangentialPolarBar(domId, data, opts) — tangential polar bar
+ *   ElegantEChart.riskDistribution(domId, data, opts)  — composite: polar + sunburst/gauge + radar
  *   ElegantEChart.dispose(domId)                   — destroy instance
  *   ElegantEChart.resize()                         — resize all instances
  *   ElegantEChart.instances                        — Map of all live instances
@@ -1887,6 +1888,302 @@
     }
   }
 
+  /* ── RISK DISTRIBUTION (polar + sunburst/gauge + radar composite) ── */
+  function riskDistribution(domId, data, options) {
+    var dom = document.getElementById(domId);
+    if (!dom) return null;
+    var FONT = "'Zoho Puvi', sans-serif";
+    var opts = options || {};
+    var d = data || {};
+
+    var polarData = d.polar || {};
+    var sunburstData = d.sunburst || {};
+    var radarData = d.radar || {};
+    var sevColors = d.severityColors || ['#DD1616', '#FB5901', '#FABB34'];
+
+    var sunburstOnly = !!d.sunburstOnly;
+
+    if (sunburstOnly) {
+      dom.innerHTML =
+        '<div style="width:100%;height:100%;">' +
+          '<div id="' + domId + '-sunburst" style="width:100%;height:100%;position:relative;"></div>' +
+        '</div>';
+    } else {
+      dom.innerHTML =
+        '<div style="display:flex;gap:0;width:100%;height:100%;align-items:stretch;">' +
+          '<div id="' + domId + '-polar" style="flex:0 0 20%;min-width:0;"></div>' +
+          '<div id="' + domId + '-sunburst" style="flex:1;min-width:0;position:relative;"></div>' +
+          '<div id="' + domId + '-radar" style="flex:0 0 20%;min-width:0;"></div>' +
+        '</div>';
+    }
+
+    /* ── POLAR (Risk Velocity) ── */
+    var polarChart = null;
+    if (!sunburstOnly) {
+    polarChart = init(domId + '-polar');
+    if (polarChart) {
+      var pLabels = polarData.labels || ['1Sep','2Sep','3Sep','4Sep','5Sep','6Sep','7Sep','8Sep','9Sep','10Sep'];
+      var pDatasets = polarData.datasets || [
+        { label: 'Critical', values: [80,60,90,70,50,85,65,75,45,80], color: sevColors[0] },
+        { label: 'Trouble', values: [50,40,60,55,35,55,45,50,30,55], color: sevColors[1] },
+        { label: 'Attention', values: [30,25,35,30,20,40,30,35,20,35], color: sevColors[2] }
+      ];
+      var pSeries = pDatasets.map(function(ds) {
+        return {
+          type: 'bar', name: ds.label, data: ds.values,
+          coordinateSystem: 'polar', stack: 'velocity',
+          itemStyle: { color: ds.color, borderRadius: 2 },
+          emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,0.2)' } }
+        };
+      });
+      polarChart.setOption(Object.assign({}, ANIM, {
+        title: { text: polarData.title || 'Risk Velocity', left: 'center', top: 0, textStyle: { fontSize: 13, fontWeight: 600, color: '#000', fontFamily: FONT } },
+        tooltip: Object.assign({}, TOOLTIP_AXIS),
+        legend: { bottom: 0, left: 'center', icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 12, textStyle: { fontSize: 11, color: '#626262', fontFamily: FONT } },
+        polar: { radius: ['18%', '70%'], center: ['50%', '50%'] },
+        angleAxis: { type: 'category', data: pLabels, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { fontSize: 11, color: '#333', fontFamily: FONT } },
+        radiusAxis: { show: false },
+        animationDuration: 1000, animationEasing: 'cubicOut',
+        animationDelay: function(i) { return i * 80; },
+        series: pSeries
+      }));
+      autoResize(polarChart);
+    }
+    }
+
+    /* ── SUNBURST + GAUGE (semicircular) ── */
+    var sunburstChart = init(domId + '-sunburst');
+    if (sunburstChart) {
+      var categories = sunburstData.categories || [
+        {
+          name: 'Assets', color: '#002EAC',
+          children: [
+            { name: 'Misconfiguration', value: 230, color: '#0E38A9', children: [
+              { name: 'UEBA Risk', value: 230, color: '#3465EC' },
+              { name: 'Other Risk', value: 230, color: '#2253DB' }
+            ]},
+            { name: 'Vulnerability', value: 240, color: '#1141C6', children: [
+              { name: 'Misconfiguration', value: 230, color: '#2253DB' },
+              { name: 'UEBA Risk', value: 230, color: '#2253DB' }
+            ]},
+            { name: 'Other Risk', value: 20, color: '#214FD0' }
+          ]
+        },
+        {
+          name: 'Applications', color: '#0087A1',
+          children: [
+            { name: 'UEBA Risk', value: 230, color: '#009CBB', children: [
+              { name: 'DLP Risk', value: 230, color: '#0CADCE' },
+              { name: 'Other Risk', value: 230, color: '#14BFE1' }
+            ]},
+            { name: 'Misconfiguration', value: 230, color: '#0CADCE' }
+          ]
+        },
+        {
+          name: 'Users', color: '#9750FB',
+          children: [
+            { name: 'UEBA Risk', value: 230, color: '#A769FF', children: [
+              { name: 'Other Risk', value: 230, color: '#BE90FF' }
+            ]},
+            { name: 'DLP Risk', value: 300, color: '#B27CFF' },
+            { name: 'Other Risk', value: 230, color: '#BE90FF' }
+          ]
+        }
+      ];
+
+      function buildSbData(cats) {
+        return cats.map(function(cat) {
+          var mid = (cat.children || []).map(function(sub) {
+            var outer = (sub.children || []).map(function(leaf) {
+              return {
+                name: leaf.name + '\n' + leaf.value, value: leaf.value,
+                itemStyle: { color: leaf.color || sub.color, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+                label: { color: '#fff', fontSize: 10, fontFamily: FONT }
+              };
+            });
+            var node = {
+              name: sub.name + '\n' + sub.value, value: sub.value,
+              itemStyle: { color: sub.color || cat.color, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)' },
+              label: { color: '#fff', fontSize: 11, fontWeight: 500, fontFamily: FONT }
+            };
+            if (outer.length) node.children = outer;
+            return node;
+          });
+          return {
+            name: cat.name, value: mid.reduce(function(s, c) { return s + c.value; }, 0),
+            itemStyle: { color: cat.color, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
+            label: { color: '#fff', fontSize: 12, fontWeight: 600, fontFamily: FONT },
+            children: mid
+          };
+        });
+      }
+
+      var sbData = buildSbData(categories);
+
+      var totalVisible = sbData.reduce(function(s, c) { return s + (c.value || 0); }, 0);
+      sbData.push({
+        name: '', value: totalVisible,
+        itemStyle: { color: 'transparent', borderWidth: 0 },
+        label: { show: false },
+        children: [
+          { name: '', value: totalVisible, itemStyle: { color: 'transparent', borderWidth: 0 }, label: { show: false },
+            children: [{ name: '', value: totalVisible, itemStyle: { color: 'transparent', borderWidth: 0 }, label: { show: false } }]
+          }
+        ]
+      });
+
+      var gaugeSvgUrl = (opts.assetPath || './assets/icons/') + 'gauge-center.svg';
+      var sbContainer = document.getElementById(domId + '-sunburst');
+      if (sbContainer) {
+        var gaugeOverlay = document.createElement('div');
+        gaugeOverlay.style.cssText = 'position:absolute;pointer-events:none;z-index:10;';
+        sbContainer.appendChild(gaugeOverlay);
+        fetch(gaugeSvgUrl).then(function(r){
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        }).then(function(svgText){
+          gaugeOverlay.innerHTML = svgText;
+          var svg = gaugeOverlay.querySelector('svg');
+          if (svg) { svg.style.width = '100%'; svg.style.height = 'auto'; svg.style.display = 'block'; }
+        }).catch(function(){
+          var img = document.createElement('img');
+          img.src = gaugeSvgUrl;
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          img.style.display = 'block';
+          gaugeOverlay.appendChild(img);
+        });
+
+        function sizeGauge() {
+          var cW = sbContainer.clientWidth, cH = sbContainer.clientHeight;
+          if (!cW || !cH) return;
+          var ref = sunburstOnly ? cH : Math.min(cW, cH);
+          var innerRadPx = 0.85 * ref / 2;
+          var innerDiamPx = innerRadPx * 2;
+          var gaugeSvgRatio = 389.81 / 481;
+          var gaugeScale = opts.gaugeScale || 1.12;
+          var overlayW = (innerDiamPx / gaugeSvgRatio) * gaugeScale;
+          var overlayH = overlayW * (221 / 481);
+          var centerX = cW * 0.5;
+          var centerY = cH * 0.98;
+          gaugeOverlay.style.width = overlayW + 'px';
+          gaugeOverlay.style.height = overlayH + 'px';
+          gaugeOverlay.style.left = (centerX - overlayW / 2) + 'px';
+          gaugeOverlay.style.top = (centerY - overlayH) + 'px';
+        }
+        setTimeout(sizeGauge, 200);
+        window.addEventListener('resize', sizeGauge);
+        if (typeof ResizeObserver !== 'undefined') {
+          new ResizeObserver(sizeGauge).observe(sbContainer);
+        }
+      }
+
+      var sbEl = document.getElementById(domId + '-sunburst');
+      var sbW = sbEl ? sbEl.clientWidth : 600;
+      var sbH = sbEl ? sbEl.clientHeight : 480;
+      var sbRad, sbCenter;
+      if (sunburstOnly && sbW > sbH * 1.4) {
+        var pctBase = (sbH / Math.min(sbW, sbH)) * 100;
+        sbRad = [Math.round(pctBase * 0.85) + '%', Math.round(pctBase * 1.85) + '%'];
+        sbCenter = ['50%', '98%'];
+      } else {
+        sbRad = ['85%', '185%'];
+        sbCenter = ['50%', '98%'];
+      }
+
+      sunburstChart.setOption({
+        tooltip: {
+          trigger: 'item', backgroundColor: 'rgba(39,45,66,0.95)', borderColor: '#555', borderWidth: 1,
+          textStyle: { fontSize: 12, color: '#fff', fontFamily: FONT },
+          formatter: function(p) {
+            if (!p.data || !p.data.name || p.data.name === '') return '';
+            return '<b>' + p.data.name.replace('\n', '</b>: ');
+          }
+        },
+        graphic: [
+          {
+            type: 'text', left: 'center', top: 0, z: 100,
+            style: { text: sunburstData.title || 'Org Risk Distribution', fill: '#000', fontSize: 13, fontWeight: 600, fontFamily: FONT, textAlign: 'center' }
+          }
+        ],
+        series: [
+          {
+            type: 'sunburst', data: sbData,
+            radius: sbRad, center: sbCenter,
+            startAngle: 180, sort: null, nodeClick: false,
+            label: { show: true, rotate: 'radial', minAngle: 25, fontSize: 10, fontFamily: FONT, color: '#fff' },
+            emphasis: {
+              focus: 'ancestor',
+              itemStyle: { shadowBlur: 15, shadowColor: 'rgba(0,0,0,0.4)' }
+            },
+            levels: [
+              {},
+              {
+                r0: '85%', r: '108%',
+                label: { show: true, fontSize: 12, fontWeight: 600, rotate: 'radial', minAngle: 25, align: 'center' },
+                itemStyle: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' }
+              },
+              {
+                r0: '108%', r: '146%',
+                label: { show: true, fontSize: 11, fontWeight: 500, rotate: 'radial', minAngle: 20 },
+                itemStyle: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)' }
+              },
+              {
+                r0: '146%', r: '185%',
+                label: { show: true, fontSize: 10, rotate: 'radial', minAngle: 18 },
+                itemStyle: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }
+              }
+            ],
+            animationType: 'expansion', animationDuration: 1400, animationEasing: 'cubicOut'
+          }
+        ]
+      });
+      autoResize(sunburstChart);
+    }
+
+    /* ── RADAR (Risk by Category) ── */
+    var radarChart = null;
+    if (!sunburstOnly) {
+    radarChart = init(domId + '-radar');
+    if (radarChart) {
+      var rLabels = radarData.labels || ['Identity\nCompromise','Operational\nImpact','Data\nExposure','Lateral\nPropagation','Control\nEvasion','Intrusion\nRisk','Attack\nSurface'];
+      var rMax = radarData.max || 30000;
+      var rDatasets = radarData.datasets || [
+        { label: 'Critical', values: [25000,18000,22000,15000,20000,28000,24000], color: sevColors[0] },
+        { label: 'Trouble', values: [15000,12000,16000,10000,14000,18000,16000], color: sevColors[1] },
+        { label: 'Attention', values: [8000,6000,10000,5000,8000,12000,9000], color: sevColors[2] }
+      ];
+      var indicators = rLabels.map(function(l) { return { name: l, max: rMax }; });
+      var rSeries = rDatasets.map(function(ds) {
+        return {
+          value: ds.values, name: ds.label,
+          lineStyle: { color: ds.color, width: 2 },
+          areaStyle: { color: ds.color, opacity: 0.15 },
+          itemStyle: { color: ds.color },
+          symbol: 'circle', symbolSize: 5
+        };
+      });
+      radarChart.setOption(Object.assign({}, ANIM, {
+        title: { text: radarData.title || 'Risk by Category', left: 'center', top: 0, textStyle: { fontSize: 13, fontWeight: 600, color: '#000', fontFamily: FONT } },
+        tooltip: Object.assign({}, TOOLTIP_ITEM),
+        legend: { bottom: 0, left: 'center', icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 12, textStyle: { fontSize: 11, color: '#626262', fontFamily: FONT } },
+        radar: {
+          indicator: indicators, radius: '60%', center: ['50%', '52%'],
+          axisName: { color: '#333', fontSize: 11, fontFamily: FONT },
+          splitArea: { areaStyle: { color: ['rgba(44,102,221,0.02)', 'rgba(44,102,221,0.04)'] } },
+          splitLine: { lineStyle: { color: '#E9E9E9' } },
+          axisLine: { lineStyle: { color: '#DCDCDC' } }
+        },
+        animationDuration: 1000, animationEasing: 'cubicOut',
+        series: [{ type: 'radar', data: rSeries, emphasis: { lineStyle: { width: 3 } } }]
+      }));
+      autoResize(radarChart);
+    }
+    }
+
+    return { polar: polarChart, sunburst: sunburstChart, radar: radarChart };
+  }
+
   /* ── RESIZE ALL ── */
   function resizeAll() {
     Object.keys(instances).forEach(function (id) {
@@ -1932,6 +2229,7 @@
     geoWidget: geoWidget,
     tileWidget: tileWidget,
     tangentialPolarBar: tangentialPolarBar,
+    riskDistribution: riskDistribution,
     dispose: dispose,
     resize: resizeAll,
     instances: instances,

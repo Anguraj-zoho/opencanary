@@ -17,6 +17,7 @@
 
       headers.forEach(function (header, index) {
         header.addEventListener('click', function () {
+          if (header.hasAttribute('data-no-switch')) return;
           headers.forEach(function (h) {
             h.classList.remove('classic-tab__header--selected');
             h.classList.add('classic-tab__header--unselected');
